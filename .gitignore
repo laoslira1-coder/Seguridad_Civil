@@ -1,0 +1,69 @@
+# ============================================================
+# .gitignore — Seguridad Civil (PHP / Windows)
+# ============================================================
+
+# -----------------------------------------------
+# Archivos de configuración con credenciales
+# -----------------------------------------------
+config.php
+conexion.php
+
+# -----------------------------------------------
+# Carpeta de Claude Code (worktrees / memoria)
+# -----------------------------------------------
+.claude/
+
+# -----------------------------------------------
+# Archivos temporales de PHP
+# -----------------------------------------------
+*.log
+*.cache
+error_log
+php_errors.log
+
+# -----------------------------------------------
+# Dependencias (si se usa Composer en el futuro)
+# -----------------------------------------------
+vendor/
+composer.lock
+
+# -----------------------------------------------
+# Archivos de entorno
+# -----------------------------------------------
+.env
+.env.local
+.env.*.local
+
+# -----------------------------------------------
+# Archivos temporales de Windows
+# -----------------------------------------------
+Thumbs.db
+Thumbs.db:encdata
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# -----------------------------------------------
+# IDEs y editores
+# -----------------------------------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+nbproject/
+
+# -----------------------------------------------
+# Archivos de sistema macOS (por si colabora alguien en Mac)
+# -----------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# -----------------------------------------------
+# Archivos de subida temporal / exports
+# -----------------------------------------------
+uploads/
+exports/
+*.tmp
+*.bak
+*.swp
