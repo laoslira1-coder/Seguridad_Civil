@@ -1,1 +1,2 @@
 Hola desde Rodrigo y Bartolito! Conexión OK.
+Deploy automático desde GitHub a Hostinger: CONFIGURADO ✓
