@@ -178,7 +178,7 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
         $soat_vcto_front = '01/01/1999'; // Esto activará el recuadro ROJO en tu frontend
     }
 
-    // Devolver al Frontend
+    // Devolver al Frontend sin datos de debug internos
     echo json_encode([
         'encontrado' => true, 
         'origen' => 'API_GUARDADO', 
@@ -190,8 +190,7 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
         'color' => $color,
         'anio' => $fila['anio'] ?? '', 
         'empresa_transporte' => $emp_t, 
-        'soat_vcto' => $soat_vcto_front,
-        '_debug_soat_api' => isset($res_soat_api) ? json_decode($res_soat_api, true) : 'No consultada' // Diagnóstico secreto
+        'soat_vcto' => $soat_vcto_front
     ]);
     exit;
 

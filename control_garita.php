@@ -35,6 +35,27 @@ foreach($revisar_columnas as $columna => $tipo) {
         mysqli_query($conn, "ALTER TABLE vehiculos ADD `$columna` $tipo");
     }
 }
+
+// ==============================================================================
+// 0. AUTO-CREACIÓN DE TABLA JEFES Y AUTORIZADORES (Mejora Arquitectura)
+// ==============================================================================
+$chk_jefes = mysqli_query($conn, "SHOW TABLES LIKE 'jefes_turno'");
+if (mysqli_num_rows($chk_jefes) == 0) {
+    mysqli_query($conn, "CREATE TABLE jefes_turno (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL,
+        rol VARCHAR(50) NOT NULL,
+        cargo_desc VARCHAR(100) NOT NULL,
+        estado VARCHAR(20) DEFAULT 'ACTIVO'
+    )");
+    
+    // Insertar datos por defecto al crear la base de datos
+    mysqli_query($conn, "INSERT INTO jefes_turno (nombre, rol, cargo_desc) VALUES 
+        ('MANUEL ADRIAN PERALTA ESPINOZA', 'AUTORIZADOR', 'Autorizador de Ingreso'),
+        ('BENJAMIN MAMANI FLORES', 'AUTORIZADOR', 'Autorizador de Ingreso'),
+        ('JORGE TACO LLOSA', 'JEFE_TURNO', 'Jefe de Guardia'),
+        ('FREDY ACHIRCANA TORRES', 'JEFE_TURNO', 'Jefe de Guardia')");
+}
 // ==============================================================================
 
 // --- TRADUCTOR DE FECHAS (Evita que la Base de Datos rechace la actualización) ---
@@ -516,27 +537,28 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <label style="color:#c5a059;">Autorizado Por:</label>
                 <select id="selectAutoriza" name="selectAutoriza" style="margin-bottom: 20px;">
                     <option value="">-- SELECCIONE AUTORIZADOR --</option>
-                    <option value="MANUEL ADRIAN PERALTA ESPINOZA">MANUEL ADRIAN PERALTA ESPINOZA</option>
-                    <option value="BENJAMIN MAMANI FLORES">BENJAMIN MAMANI FLORES</option>
+                    <?php
+                    $res_aut = mysqli_query($conn, "SELECT nombre FROM jefes_turno WHERE rol='AUTORIZADOR' AND estado='ACTIVO'");
+                    while($row_a = mysqli_fetch_assoc($res_aut)):
+                    ?>
+                        <option value="<?= htmlspecialchars($row_a['nombre']) ?>"><?= htmlspecialchars($row_a['nombre']) ?></option>
+                    <?php endwhile; ?>
                 </select>
 
                 <label style="color:#c5a059; margin-bottom:10px;">Jefe de Seguridad en Turno:</label>
                 
-                <div class="jefe-option" onclick="selectJefe(this, 'JORGE TACO LLOSA')">
+                <?php
+                $res_jefes = mysqli_query($conn, "SELECT nombre, cargo_desc FROM jefes_turno WHERE rol='JEFE_TURNO' AND estado='ACTIVO'");
+                while($row_j = mysqli_fetch_assoc($res_jefes)):
+                ?>
+                <div class="jefe-option" onclick="selectJefe(this, '<?= htmlspecialchars($row_j['nombre']) ?>')">
                     <div class="jefe-icon"><i class="fa-solid fa-user-shield"></i></div>
                     <div class="jefe-info">
-                        <h4>JORGE TACO LLOSA</h4>
-                        <p>Jefe de Guardia</p>
+                        <h4><?= htmlspecialchars($row_j['nombre']) ?></h4>
+                        <p><?= htmlspecialchars($row_j['cargo_desc']) ?></p>
                     </div>
                 </div>
-
-                <div class="jefe-option" onclick="selectJefe(this, 'FREDY ACHIRCANA TORRES')">
-                    <div class="jefe-icon"><i class="fa-solid fa-user-shield"></i></div>
-                    <div class="jefe-info">
-                        <h4>FREDY ACHIRCANA TORRES</h4>
-                        <p>Jefe de Guardia</p>
-                    </div>
-                </div>
+                <?php endwhile; ?>
                 
                 <input type="hidden" name="passed_jefe" id="inputJefeHidden">
             </div>
