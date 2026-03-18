@@ -484,7 +484,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
 <nav class="header-main">
     <div class="nav-left">
         <a href="control_garita_principal.php" class="btn-back"><i class="fa-solid fa-chevron-left"></i></a>
-        <a href="reporte_excel.php" target="_blank" style="background:#166534; color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:8px;">
+        <a href="reporte_excel.php" style="background:#166534; color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:8px;">
             <i class="fa-solid fa-file-excel"></i> DATA
         </a>
     </div>
