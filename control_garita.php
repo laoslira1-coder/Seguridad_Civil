@@ -4,6 +4,10 @@ session_start();
 
 date_default_timezone_set('America/Lima');
 
+// Desactivar excepciones mysqli para compatibilidad con el manejo manual de errores
+$driver = new mysqli_driver();
+$driver->report_mode = MYSQLI_REPORT_OFF;
+
 // 2. CONEXIÓN
 require_once 'config.php';
 // \$conn disponible desde config.php
