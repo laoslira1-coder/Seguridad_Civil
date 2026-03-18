@@ -58,29 +58,30 @@ function formatDateForDB($dateStr) {
 // ---------------------------------------------------------
 if (isset($_POST['ajax_create_companion'])) {
     ob_clean();
-    header('Content-Type: application/json'); 
-    
-    $dni = mysqli_real_escape_string($conn, $_POST['dni']);
-    $nombre = strtoupper(mysqli_real_escape_string($conn, $_POST['nombre']));
-    $empresa = strtoupper(mysqli_real_escape_string($conn, $_POST['empresa']));
-    $cargo = strtoupper(mysqli_real_escape_string($conn, $_POST['cargo'])); 
-    $tipo = mysqli_real_escape_string($conn, $_POST['tipo']); 
-    
-    $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
-    if(mysqli_num_rows($check) > 0){
+    header('Content-Type: application/json');
+
+    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni'] ?? '');
+    $nombre = strtoupper(trim($_POST['nombre'] ?? ''));
+    $empresa = strtoupper(trim($_POST['empresa'] ?? ''));
+    $cargo  = strtoupper(trim($_POST['cargo'] ?? 'VISITA'));
+    $tipo   = trim($_POST['tipo'] ?? 'VISITA');
+
+    $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
+    $stmt_chk->bind_param("s", $dni);
+    $stmt_chk->execute();
+    if ($stmt_chk->get_result()->num_rows > 0) {
         echo json_encode(['success' => false, 'msg' => 'El DNI ya está registrado.']); exit;
     }
-    
-    $sql = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-            VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', '-', '$cargo', 'ACTIVO')";
-    
-    if(mysqli_query($conn, $sql)){ 
-        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => $cargo, 'empresa' => $empresa]); 
-    } else { 
-        // Fallback sin cargo si la columna falla
-        $sql_b = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, estado_validacion) VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', 'ACTIVO')";
-        mysqli_query($conn, $sql_b);
-        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => 'VISITA', 'empresa' => $empresa]); 
+
+    $stmt_ins = $conn->prepare(
+        "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
+         VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
+    );
+    $stmt_ins->bind_param("sssss", $dni, $nombre, $empresa, $tipo, $cargo);
+    if ($stmt_ins->execute()) {
+        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => $cargo, 'empresa' => $empresa]);
+    } else {
+        echo json_encode(['success' => false, 'msg' => 'Error al guardar.']);
     }
     exit;
 }

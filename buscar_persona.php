@@ -23,13 +23,17 @@ if (isset($_GET['dni'])) {
     // =========================================================
     // FASE 1: BÚSQUEDA LOCAL (TIEMPO DE RESPUESTA: < 0.1s | COSTO: 0)
     // =========================================================
-    $sql_f = "SELECT * FROM fuerza_laboral WHERE dni = '$dni' LIMIT 1";
-    $res_f = mysqli_query($conn, $sql_f);
-    $persona = ($res_f && mysqli_num_rows($res_f) > 0) ? mysqli_fetch_assoc($res_f) : null;
+    $stmt_f = $conn->prepare("SELECT * FROM fuerza_laboral WHERE dni = ? LIMIT 1");
+    $stmt_f->bind_param("s", $dni);
+    $stmt_f->execute();
+    $res_f = $stmt_f->get_result();
+    $persona = ($res_f->num_rows > 0) ? $res_f->fetch_assoc() : null;
 
-    $sql_l = "SELECT * FROM detalles_conductor WHERE dni = '$dni' LIMIT 1";
-    $res_l = mysqli_query($conn, $sql_l);
-    $licencia = ($res_l && mysqli_num_rows($res_l) > 0) ? mysqli_fetch_assoc($res_l) : null;
+    $stmt_l = $conn->prepare("SELECT * FROM detalles_conductor WHERE dni = ? LIMIT 1");
+    $stmt_l->bind_param("s", $dni);
+    $stmt_l->execute();
+    $res_l = $stmt_l->get_result();
+    $licencia = ($res_l->num_rows > 0) ? $res_l->fetch_assoc() : null;
 
     // Evaluamos qué información ya poseemos en nuestro disco duro
     $tiene_datos_basicos = ($persona && !empty($persona['nombres']) && $persona['nombres'] !== 'NO ENCONTRADO');
@@ -243,8 +247,12 @@ if (isset($_GET['dni'])) {
 
     // Si ni Reniec ni MTC devolvieron el nombre, desbloqueamos la UI manual.
     if ($nombres_db === "NO ENCONTRADO" || empty(trim($nombres_db))) {
-        mysqli_query($conn, "DELETE FROM fuerza_laboral WHERE dni='$dni'");
-        mysqli_query($conn, "DELETE FROM detalles_conductor WHERE dni='$dni'");
+        $stmt_del1 = $conn->prepare("DELETE FROM fuerza_laboral WHERE dni = ?");
+        $stmt_del1->bind_param("s", $dni);
+        $stmt_del1->execute();
+        $stmt_del2 = $conn->prepare("DELETE FROM detalles_conductor WHERE dni = ?");
+        $stmt_del2->bind_param("s", $dni);
+        $stmt_del2->execute();
         
         echo json_encode([
             'success' => false, 

@@ -11,16 +11,18 @@ if (!isset($_SESSION['usuario'])) {
 require_once 'config.php';
 // $conn disponible desde config.php (Hostinger)
 // 3. RECUPERAR DATOS EXACTOS
-$usuario_session = $_SESSION['usuario']; 
-$sql_user = "SELECT nombre, cargo_real FROM usuarios WHERE nombre_usuario = '$usuario_session' LIMIT 1";
-$res_user = mysqli_query($conn, $sql_user);
+$usuario_session = $_SESSION['usuario'];
+$stmt_user = $conn->prepare("SELECT nombre, cargo_real FROM usuarios WHERE nombre_usuario = ? LIMIT 1");
+$stmt_user->bind_param("s", $usuario_session);
+$stmt_user->execute();
+$res_user = $stmt_user->get_result();
 
-$nombre_completo = $_SESSION['usuario']; 
-$cargo_real = "OPERADOR DE SEGURIDAD"; 
+$nombre_completo = $_SESSION['usuario'];
+$cargo_real = "OPERADOR DE SEGURIDAD";
 
-if ($res_user && mysqli_num_rows($res_user) > 0) {
-    $fila_usuario = mysqli_fetch_assoc($res_user);
-    $nombre_completo = $fila_usuario['nombre']; 
+if ($res_user && $res_user->num_rows > 0) {
+    $fila_usuario = $res_user->fetch_assoc();
+    $nombre_completo = $fila_usuario['nombre'];
     $cargo_real = $fila_usuario['cargo_real'];
 }
 ?>

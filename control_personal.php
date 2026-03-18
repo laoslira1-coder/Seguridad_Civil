@@ -27,12 +27,14 @@ $tipo_mensaje = "";
 // 2. BÚSQUEDA
 // ---------------------------------------------------------
 if (isset($_POST['dni_buscar'])) {
-    $busqueda = mysqli_real_escape_string($conn, $_POST['dni_buscar']);
-    $sql = "SELECT * FROM fuerza_laboral WHERE dni = '$busqueda' LIMIT 1";
-    $res = mysqli_query($conn, $sql);
-    
-    if ($res && mysqli_num_rows($res) > 0) {
-        $persona = mysqli_fetch_assoc($res);
+    $busqueda = preg_replace('/[^0-9]/', '', $_POST['dni_buscar']);
+    $stmt_bus = $conn->prepare("SELECT * FROM fuerza_laboral WHERE dni = ? LIMIT 1");
+    $stmt_bus->bind_param("s", $busqueda);
+    $stmt_bus->execute();
+    $res = $stmt_bus->get_result();
+
+    if ($res->num_rows > 0) {
+        $persona = $res->fetch_assoc();
     } else {
         $nuevo_dni = $busqueda;
     }
@@ -42,54 +44,63 @@ if (isset($_POST['dni_buscar'])) {
 // 3. REGISTRO (CORREGIDO: ELIMINADO num_acompanantes)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar'])) {
-    $dni = $_POST['dni_final']; 
-    $nombre = strtoupper($_POST['nombre_final']); 
-    $empresa = strtoupper($_POST['empresa_final']);
-    
+    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni_final']);
+    $nombre = strtoupper(trim($_POST['nombre_final']));
+    $empresa = strtoupper(trim($_POST['empresa_final']));
+
     // Si es nuevo, insertamos en fuerza_laboral
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = $_POST['tipo_personal_new']; 
-        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
-        if (mysqli_num_rows($check) == 0) {
-            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-                        VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo_p', '-', 'PEATON', 'ACTIVO')"; 
-            if(!mysqli_query($conn, $sql_new)) {
-                die("Error al crear personal: " . mysqli_error($conn));
+        $tipo_p = trim($_POST['tipo_personal_new']);
+        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
+        $stmt_chk->bind_param("s", $dni);
+        $stmt_chk->execute();
+        if ($stmt_chk->get_result()->num_rows == 0) {
+            $cargo_peat = 'PEATON';
+            $stmt_new = $conn->prepare(
+                "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
+                 VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
+            );
+            $stmt_new->bind_param("sssss", $dni, $nombre, $empresa, $tipo_p, $cargo_peat);
+            if (!$stmt_new->execute()) {
+                die("Error al crear personal.");
             }
         }
     }
 
-    $mov = $_POST['tipo_movimiento'];
-    
+    $mov = trim($_POST['tipo_movimiento']);
+
     if ($mov === 'SALIDA') {
-        $destino = strtoupper($_POST['destino_salida']);
-        $autoriza = $_POST['autoriza_salida'];
+        $destino  = strtoupper(trim($_POST['destino_salida']));
+        $autoriza = trim($_POST['autoriza_salida']);
     } else {
-        $destino = 'INTERIOR MINA';
+        $destino  = 'INTERIOR MINA';
         $autoriza = 'VERIFICADO EN GARITA';
     }
 
-    $anfitrion = isset($_POST['anfitrion']) ? strtoupper($_POST['anfitrion']) : '-';
-    $motivo    = isset($_POST['motivo']) ? strtoupper($_POST['motivo']) : '-';
-    $op = $_SESSION['usuario'];
+    $anfitrion = strtoupper(trim($_POST['anfitrion'] ?? '-'));
+    $motivo    = strtoupper(trim($_POST['motivo'] ?? '-'));
+    $op        = $_SESSION['usuario'];
+    $ning      = 'NINGUNO';
 
-    // SQL INSERT CORREGIDO (Quitamos num_acompanantes que causaba el error 500)
-    $sql_reg = "INSERT INTO registros_garita (
-                    dni_conductor, nombre_conductor, empresa, tipo_movimiento, 
-                    destino, autorizado_por, anfitrion, motivo, operador_garita, 
-                    fecha_ingreso, acompanante_1, acompanante_2, acompanante_3, acompanante_4
-                ) VALUES (
-                    '$dni', '$nombre', '$empresa', '$mov', 
-                    '$destino', '$autoriza', '$anfitrion', '$motivo', '$op', 
-                    NOW(), 'NINGUNO', 'NINGUNO', 'NINGUNO', 'NINGUNO'
-                )";
-    
-    if (mysqli_query($conn, $sql_reg)) {
+    $stmt_reg = $conn->prepare(
+        "INSERT INTO registros_garita
+            (dni_conductor, nombre_conductor, empresa, tipo_movimiento,
+             destino, autorizado_por, anfitrion, motivo, operador_garita,
+             fecha_ingreso, acompanante_1, acompanante_2, acompanante_3, acompanante_4)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)"
+    );
+    $stmt_reg->bind_param(
+        "sssssssssssss",
+        $dni, $nombre, $empresa, $mov,
+        $destino, $autoriza, $anfitrion, $motivo, $op,
+        $ning, $ning, $ning, $ning
+    );
+
+    if ($stmt_reg->execute()) {
         header("Location: control_personal.php?status=ok");
         exit();
     } else {
-        // Si falla, mostramos el error en pantalla
-        die("Error FATAL SQL: " . mysqli_error($conn));
+        die("Error FATAL SQL: " . $stmt_reg->error);
     }
 }
 

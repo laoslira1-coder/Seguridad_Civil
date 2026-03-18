@@ -35,39 +35,34 @@ $tipo_mensaje = "";
 // 0. AJAX: CREACIÓN RÁPIDA DE ACOMPAÑANTE (MODAL FANTASMA)
 // ---------------------------------------------------------
 if (isset($_POST['ajax_create_companion'])) {
-    ob_clean(); // Borrar cualquier alerta previa
-    header('Content-Type: application/json'); 
+    ob_clean();
+    header('Content-Type: application/json');
 
-    $dni = mysqli_real_escape_string($conn, $_POST['dni']);
-    $nombre = strtoupper(mysqli_real_escape_string($conn, $_POST['nombre']));
-    $empresa = strtoupper(mysqli_real_escape_string($conn, $_POST['empresa']));
-    $tipo = mysqli_real_escape_string($conn, $_POST['tipo']); 
-    
-    // CORRECCIÓN: Buscamos por 'dni' en lugar de 'id' (porque 'id' podría no existir)
-    $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
-    
-    if(!$check) {
-        // Si falla la consulta, avisamos por qué
-        echo json_encode(['success' => false, 'msg' => 'Error al verificar DNI: ' . mysqli_error($conn)]);
-        exit;
-    }
+    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni'] ?? '');
+    $nombre = strtoupper(trim($_POST['nombre'] ?? ''));
+    $empresa = strtoupper(trim($_POST['empresa'] ?? ''));
+    $tipo   = trim($_POST['tipo'] ?? 'VISITA');
 
-    if(mysqli_num_rows($check) > 0){
+    $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
+    $stmt_chk->bind_param("s", $dni);
+    $stmt_chk->execute();
+    if ($stmt_chk->get_result()->num_rows > 0) {
         echo json_encode(['success' => false, 'msg' => 'El DNI ya está registrado.']);
         exit;
     }
 
-    // INSERTAR
-    // Rellenamos apellidos con '-' y otros campos obligatorios con valores por defecto
-    $sql = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-            VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', '-', 'VISITANTE', 'ACTIVO')";
-    
-    if(mysqli_query($conn, $sql)){
+    $cargo_vis = 'VISITANTE';
+    $stmt_ins = $conn->prepare(
+        "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
+         VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
+    );
+    $stmt_ins->bind_param("sssss", $dni, $nombre, $empresa, $tipo, $cargo_vis);
+    if ($stmt_ins->execute()) {
         echo json_encode(['success' => true, 'nombre_completo' => $nombre]);
     } else {
-        echo json_encode(['success' => false, 'msg' => 'Error al guardar: ' . mysqli_error($conn)]);
+        echo json_encode(['success' => false, 'msg' => 'Error al guardar.']);
     }
-    exit; // Fin del proceso AJAX
+    exit;
 }
 
 // ---------------------------------------------------------

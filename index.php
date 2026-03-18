@@ -1,24 +1,32 @@
 <?php
 // 1. LÓGICA DE CONEXIÓN Y SESIÓN
+session_start();
 require_once 'config.php';
-$conexion = $conn; // Alias para compatibilidad con el resto del archivo
+require_once 'security.php';
+$conexion = $conn;
 
 $mensaje = "";
 if (isset($_POST['ingresar'])) {
-    $usuario_ingresado = $_POST['usuario'];
+    csrf_validate();
+
+    $usuario_ingresado = trim($_POST['usuario']);
     $password_ingresada = $_POST['password'];
 
-    $consulta = "SELECT * FROM usuarios WHERE nombre_usuario = '$usuario_ingresado' AND password = '$password_ingresada'";
-    $resultado = mysqli_query($conexion, $consulta);
+    $stmt = $conexion->prepare("SELECT password FROM usuarios WHERE nombre_usuario = ? LIMIT 1");
+    $stmt->bind_param("s", $usuario_ingresado);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
 
-    if (mysqli_num_rows($resultado) > 0) {
-        session_start();
-        $_SESSION['usuario'] = $usuario_ingresado;
-        header("Location: panel.php");
-        exit();
-    } else {
-        $mensaje = "<div class='alert error'>❌ Credenciales incorrectas</div>";
+    if ($resultado->num_rows > 0) {
+        $fila = $resultado->fetch_assoc();
+        if (password_verify($password_ingresada, $fila['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['usuario'] = $usuario_ingresado;
+            header("Location: panel.php");
+            exit();
+        }
     }
+    $mensaje = "<div class='alert error'>❌ Credenciales incorrectas</div>";
 }
 ?>
 
@@ -299,6 +307,7 @@ if (isset($_POST['ingresar'])) {
     <?php echo $mensaje; ?>
 
     <form method="POST" action="">
+        <?php echo csrf_field(); ?>
         <div class="input-group">
             <i class="fa-solid fa-user icon-left"></i>
             <input type="text" name="usuario" placeholder="Usuario Corporativo" required autocomplete="username">

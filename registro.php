@@ -1,12 +1,15 @@
 <?php
 // 1. CONEXIÓN A BASE DE DATOS
+session_start();
 require_once 'config.php';
-$conexion = $conn; // Alias para compatibilidad con el resto del archivo
+require_once 'security.php';
+$conexion = $conn;
 
 $mensaje = "";
 
 // 2. LÓGICA DE REGISTRO BLINDADA
 if (isset($_POST['registrar'])) {
+    csrf_validate();
     // Captura de datos (Ya no necesitamos escape manual aquí)
     $nombre_real    = $_POST['nombre_real'];
     $usuario_nuevo  = $_POST['usuario'];
@@ -227,6 +230,7 @@ if (isset($_POST['registrar'])) {
     <?php echo $mensaje; ?>
 
     <form method="POST" action="">
+        <?php echo csrf_field(); ?>
         <div class="input-group">
             <i class="fa-solid fa-id-card icon-left"></i>
             <input type="text" name="nombre_real" placeholder="Nombre Completo (Ej: Juan Perez)" required>

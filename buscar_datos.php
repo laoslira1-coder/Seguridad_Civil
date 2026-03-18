@@ -19,9 +19,11 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
     // =========================================================
     // FASE 1: BÚSQUEDA EN BASE DE DATOS LOCAL (COSTO: 0 TOKENS)
     // =========================================================
-    $sql = "SELECT * FROM vehiculos WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '') = '$placa_limpia' LIMIT 1";
-    $res = mysqli_query($conn, $sql);
-    $fila = ($res && mysqli_num_rows($res) > 0) ? mysqli_fetch_assoc($res) : null;
+    $stmt = $conn->prepare("SELECT * FROM vehiculos WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '') = ? LIMIT 1");
+    $stmt->bind_param("s", $placa_limpia);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $fila = ($res->num_rows > 0) ? $res->fetch_assoc() : null;
 
     // Evaluamos si tenemos la info completa localmente para NO llamar a la API
     $tiene_info_basica = ($fila && !empty($fila['marca']) && $fila['marca'] !== '-' && $fila['marca'] !== 'POR DEFINIR');
