@@ -10,7 +10,7 @@ $driver->report_mode = MYSQLI_REPORT_OFF;
 
 // 2. CONEXIÓN
 require_once 'config.php';
-// \$conn disponible desde config.php
+if (!$conn) { ob_clean(); http_response_code(503); die('Error de conexión a base de datos.'); }
 // Validar Sesión
 if (!isset($_SESSION['usuario'])) { 
     if(isset($_POST['ajax_create_companion'])) { ob_clean(); echo json_encode(['success' => false, 'msg' => 'Sesión caducada.']); exit; }
@@ -32,11 +32,12 @@ $revisar_columnas = [
 ];
 foreach($revisar_columnas as $columna => $tipo) {
     $chk = $conn->prepare("SHOW COLUMNS FROM vehiculos LIKE ?");
-    $chk->bind_param("s", $columna);
-    $chk->execute();
-    if($chk->get_result()->num_rows == 0) {
-        // $columna y $tipo son constantes internas, no input de usuario
-        mysqli_query($conn, "ALTER TABLE vehiculos ADD `$columna` $tipo");
+    if ($chk) {
+        $chk->bind_param("s", $columna);
+        $chk->execute();
+        if($chk->get_result()->num_rows == 0) {
+            mysqli_query($conn, "ALTER TABLE vehiculos ADD `$columna` $tipo");
+        }
     }
 }
 
@@ -44,7 +45,7 @@ foreach($revisar_columnas as $columna => $tipo) {
 // 0. AUTO-CREACIÓN DE TABLA JEFES Y AUTORIZADORES (Mejora Arquitectura)
 // ==============================================================================
 $chk_jefes = mysqli_query($conn, "SHOW TABLES LIKE 'jefes_turno'");
-if (mysqli_num_rows($chk_jefes) == 0) {
+if ($chk_jefes && mysqli_num_rows($chk_jefes) == 0) {
     mysqli_query($conn, "CREATE TABLE jefes_turno (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nombre VARCHAR(100) NOT NULL,
