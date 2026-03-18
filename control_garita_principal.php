@@ -29,6 +29,7 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
     
     <!-- FUENTES IDÉNTICAS A PANEL.PHP -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
     <style>

@@ -79,12 +79,14 @@ if (isset($_SESSION['temp_msg'])) {
 // 2. BÚSQUEDA CONDUCTOR
 // ---------------------------------------------------------
 if (isset($_POST['dni_buscar'])) {
-    $busqueda = mysqli_real_escape_string($conn, $_POST['dni_buscar']);
-    $sql = "SELECT * FROM fuerza_laboral WHERE dni = '$busqueda' LIMIT 1";
-    $res = mysqli_query($conn, $sql);
+    $busqueda = preg_replace('/[^0-9]/', '', $_POST['dni_buscar']);
+    $stmt_bus = $conn->prepare("SELECT * FROM fuerza_laboral WHERE dni = ? LIMIT 1");
+    $stmt_bus->bind_param("s", $busqueda);
+    $stmt_bus->execute();
+    $res = $stmt_bus->get_result();
     
-    if ($res && mysqli_num_rows($res) > 0) {
-        $persona = mysqli_fetch_assoc($res);
+    if ($res && $res->num_rows > 0) {
+        $persona = $res->fetch_assoc();
     } else {
         $nuevo_dni = $busqueda;
         $mensaje = "DNI NO REGISTRADO. COMPLETE LOS DATOS.";
@@ -96,18 +98,24 @@ if (isset($_POST['dni_buscar'])) {
 // 3. REGISTRO (Conductor Nuevo o Existente)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar'])) {
-    $dni_c = $_POST['dni_c']; 
-    $nom_c = strtoupper($_POST['nom_c']); 
-    $emp_c = strtoupper($_POST['emp_c']);
+    $dni_c = preg_replace('/[^0-9]/', '', $_POST['dni_c']); 
+    $nom_c = strtoupper(trim($_POST['nom_c'])); 
+    $emp_c = strtoupper(trim($_POST['emp_c']));
     
     // Si es nuevo conductor, lo creamos primero
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = $_POST['tipo_personal_new']; 
-        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni_c'");
-        if (mysqli_num_rows($check) == 0) {
-            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-                        VALUES ('$dni_c', '$nom_c', '-', '$emp_c', '$tipo_p', '-', 'CONDUCTOR', 'ACTIVO')"; 
-            mysqli_query($conn, $sql_new);
+        $tipo_p = trim($_POST['tipo_personal_new']); 
+        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
+        $stmt_chk->bind_param("s", $dni_c);
+        $stmt_chk->execute();
+        if ($stmt_chk->get_result()->num_rows == 0) {
+            $cargo_cond = 'CONDUCTOR';
+            $apellido_def = '-';
+            $area_def = '-';
+            $estado_def = 'ACTIVO';
+            $stmt_new = $conn->prepare("INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_new->bind_param("ssssssss", $dni_c, $nom_c, $apellido_def, $emp_c, $tipo_p, $area_def, $cargo_cond, $estado_def);
+            $stmt_new->execute();
         }
     }
 
@@ -118,20 +126,20 @@ if (isset($_POST['btn_registrar'])) {
     $anfitrion = isset($_POST['anfitrion']) ? strtoupper($_POST['anfitrion']) : '-';
     $motivo    = isset($_POST['motivo']) ? strtoupper($_POST['motivo']) : '-';
     
-    $tipo_mov = $_POST['tipo_movimiento']; 
+    $tipo_mov = trim($_POST['tipo_movimiento']); 
     $destino  = $_POST['destino'] ?: 'INTERIOR MINA'; 
     $op  = $_SESSION['usuario'];
 
-    $sql_reg = "INSERT INTO registros_garita (dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso) 
-                VALUES ('$dni_c', '$nom_c', '$emp_c', '$tipo_mov', '$destino', '$ac1', '$ac2', '$ac3', '$ac4', '$obs', '$anfitrion', '$motivo', '$op', NOW())";
+    $stmt_reg = $conn->prepare("INSERT INTO registros_garita (dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt_reg->bind_param("sssssssssssss", $dni_c, $nom_c, $emp_c, $tipo_mov, $destino, $ac1, $ac2, $ac3, $ac4, $obs, $anfitrion, $motivo, $op);
     
-    if (mysqli_query($conn, $sql_reg)) {
+    if ($stmt_reg->execute()) {
         $_SESSION['temp_msg'] = "REGISTRO EXITOSO: $nom_c ($tipo_mov)";
         $_SESSION['temp_type'] = "success";
         header("Location: control_conductor.php"); 
         exit();
     } else {
-        $mensaje = "Error al registrar movimiento: " . mysqli_error($conn);
+        $mensaje = "Error al registrar movimiento. Intente nuevamente.";
         $tipo_mensaje = "error";
     }
 }
@@ -148,6 +156,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITRAN | Control de Acceso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

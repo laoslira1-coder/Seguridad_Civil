@@ -77,7 +77,7 @@ if (isset($_GET['dni'])) {
     // =========================================================
     // FASE 2: CONEXIÓN A FACTILIZA (MODO PARALELO OPTIMIZADO)
     // =========================================================
-    $token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ'; 
+    $token = FACTILIZA_TOKEN;
     
     $nombres_db = $persona['nombres'] ?? '';
     $apellidos_db = $persona['apellidos'] ?? '-';

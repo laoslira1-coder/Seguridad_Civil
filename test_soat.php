@@ -1,10 +1,22 @@
 <?php
-// Archivo temporal para ver qué devuelve Factiliza
+// ==============================================================================
+// ARCHIVO DE PRUEBA SOAT - PROTEGIDO CON SESIÓN
+// ==============================================================================
+session_start();
+if (!isset($_SESSION['usuario'])) {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'Acceso denegado. Inicie sesión primero.']);
+    exit();
+}
+
 header('Content-Type: application/json; charset=utf-8');
+
+require_once 'config.php';
 
 // Obtenemos la placa de la URL, por defecto probaremos con M2Q834
 $placa = isset($_GET['placa']) ? $_GET['placa'] : 'M2Q834';
-$token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ';
+$token = FACTILIZA_TOKEN;
 
 $url = 'https://api.factiliza.com/v1/placa/soat/' . $placa;
 

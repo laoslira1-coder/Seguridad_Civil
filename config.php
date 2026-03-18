@@ -17,4 +17,10 @@ if (!$conn) {
 }
 
 mysqli_set_charset($conn, "utf8");
+
+// ==============================================================================
+// TOKEN CENTRALIZADO DE API FACTILIZA
+// Usar como: FACTILIZA_TOKEN en cualquier archivo que haga require_once 'config.php'
+// ==============================================================================
+define('FACTILIZA_TOKEN', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ');
 ?>

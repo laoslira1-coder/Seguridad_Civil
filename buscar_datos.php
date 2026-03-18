@@ -58,7 +58,7 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
     // =========================================================
     
     // --> TU TOKEN REAL <--
-    $token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ'; 
+    $token = FACTILIZA_TOKEN;
     
     $marca = $fila['marca'] ?? 'POR DEFINIR';
     $modelo = $fila['modelo'] ?? '-';

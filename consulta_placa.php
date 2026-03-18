@@ -19,7 +19,7 @@ function obtenerDatosVehiculo($placa, $conn) {
 
     // 3. Si no existe en tu BD local, consultar API Externa
     // ===> 1. TU TOKEN DE FACTILIZA <===
-    $token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ'; 
+    $token = FACTILIZA_TOKEN;
     
     // ===> 2. URL DE LA API DE FACTILIZA <===
     $url = 'https://api.factiliza.com/v1/placa/info/' . $placa_limpia; 

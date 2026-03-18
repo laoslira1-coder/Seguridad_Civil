@@ -33,9 +33,12 @@ $revisar_columnas = [
     'empresa_transporte' => "VARCHAR(100) DEFAULT '-'"
 ];
 foreach($revisar_columnas as $columna => $tipo) {
-    $chk = mysqli_query($conn, "SHOW COLUMNS FROM vehiculos LIKE '$columna'");
-    if($chk && mysqli_num_rows($chk) == 0) {
-        mysqli_query($conn, "ALTER TABLE vehiculos ADD $columna $tipo");
+    $chk = $conn->prepare("SHOW COLUMNS FROM vehiculos LIKE ?");
+    $chk->bind_param("s", $columna);
+    $chk->execute();
+    if($chk->get_result()->num_rows == 0) {
+        // $columna y $tipo son constantes internas, no input de usuario
+        mysqli_query($conn, "ALTER TABLE vehiculos ADD `$columna` $tipo");
     }
 }
 // ==============================================================================
@@ -104,22 +107,22 @@ $auto_auth   = isset($_GET['auth']) ? $_GET['auth'] : '';
 // LOGICA 1: CREAR VEHÍCULO NUEVO
 // ---------------------------------------------------------
 if (isset($_POST['btn_crear_vehiculo'])) {
-    $placa     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_placa']));
-    $remolque  = strtoupper(mysqli_real_escape_string($conn, $_POST['new_remolque'] ?: '-'));
-    $tipo_veh  = strtoupper(mysqli_real_escape_string($conn, $_POST['new_tipo']));
-    $marca     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_marca']));
-    $modelo    = strtoupper(mysqli_real_escape_string($conn, $_POST['new_modelo']));
-    $color     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_color']));
-    $anio      = !empty($_POST['new_anio']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['new_anio'])) : '-'; 
-    $empresa   = strtoupper(mysqli_real_escape_string($conn, $_POST['new_empresa']));
+    $placa     = strtoupper(trim($_POST['new_placa']));
+    $remolque  = strtoupper(trim($_POST['new_remolque'] ?: '-'));
+    $tipo_veh  = strtoupper(trim($_POST['new_tipo']));
+    $marca     = strtoupper(trim($_POST['new_marca']));
+    $modelo    = strtoupper(trim($_POST['new_modelo']));
+    $color     = strtoupper(trim($_POST['new_color']));
+    $anio      = !empty($_POST['new_anio']) ? strtoupper(trim($_POST['new_anio'])) : '-'; 
+    $empresa   = strtoupper(trim($_POST['new_empresa']));
     
     // Traducimos el SOAT antes de guardar
-    $soat      = mysqli_real_escape_string($conn, formatDateForDB($_POST['new_soat'] ?? ''));
+    $soat      = formatDateForDB($_POST['new_soat'] ?? '');
     
-    $estado_auth = mysqli_real_escape_string($conn, $_POST['passed_estado']); 
+    $estado_auth = trim($_POST['passed_estado']); 
     // COMBINAR JEFE Y AUTORIZADO POR
-    $jefe_turno  = mysqli_real_escape_string($conn, $_POST['passed_jefe']);
-    $solicita    = mysqli_real_escape_string($conn, $_POST['selectAutoriza']);
+    $jefe_turno  = trim($_POST['passed_jefe']);
+    $solicita    = trim($_POST['selectAutoriza']);
     
     // Formato combinado: JEFE DE TURNO (Solic: QUIEN_SOLICITA)
     $autorizado_final = $jefe_turno;
@@ -129,37 +132,41 @@ if (isset($_POST['btn_crear_vehiculo'])) {
         $autorizado_final = !empty($jefe_turno) ? $jefe_turno : 'NO ESPECIFICADO';
     }
 
-    $movimiento  = mysqli_real_escape_string($conn, $_POST['new_movimiento']); 
+    $movimiento  = trim($_POST['new_movimiento']); 
     $operador    = $_SESSION['usuario'];
-    $obs_rechazo = isset($_POST['new_obs_rechazo']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['new_obs_rechazo'])) : '';
+    $obs_rechazo = isset($_POST['new_obs_rechazo']) ? strtoupper(trim($_POST['new_obs_rechazo'])) : '';
 
-    $check = mysqli_query($conn, "SELECT id FROM vehiculos WHERE placa = '$placa'");
-    if (mysqli_num_rows($check) > 0) {
+    $stmt_chk = $conn->prepare("SELECT id FROM vehiculos WHERE placa = ?");
+    $stmt_chk->bind_param("s", $placa);
+    $stmt_chk->execute();
+    if ($stmt_chk->get_result()->num_rows > 0) {
         $mensaje = "La placa ya existe."; $tipo_mensaje = "error";
     } else {
-        $sql_new = "INSERT INTO vehiculos (placa, placa_remolque, tipo_vehiculo, marca, modelo, anio, color, empresa_transporte, soat_vcto) 
-                    VALUES ('$placa', '$remolque', '$tipo_veh', '$marca', '$modelo', '$anio', '$color', '$empresa', '$soat')";
+        $stmt_ins = $conn->prepare("INSERT INTO vehiculos (placa, placa_remolque, tipo_vehiculo, marca, modelo, anio, color, empresa_transporte, soat_vcto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_ins->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $marca, $modelo, $anio, $color, $empresa, $soat);
         
-        // AHORA SI FALLA, TE AVISARÁ Y NO AVANZARÁ
-        if (!mysqli_query($conn, $sql_new)) {
-            $_SESSION['temp_msg'] = "Error al crear Vehículo en Base de Datos: " . mysqli_error($conn);
+        if (!$stmt_ins->execute()) {
+            $_SESSION['temp_msg'] = "Error al crear Vehículo en Base de Datos.";
             $_SESSION['temp_type'] = "error";
             header("Location: control_garita.php"); exit();
         }
         
         if ($estado_auth === 'AUTORIZADO') {
-            $sql_mov = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) 
-                        VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', '$movimiento', 'EN TRANSITO', '$autorizado_final', '$operador')";
-            mysqli_query($conn, $sql_mov);
+            $destino_transito = 'EN TRANSITO';
+            $stmt_mov = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_mov->bind_param("ssssssss", $placa, $remolque, $tipo_veh, $empresa, $movimiento, $destino_transito, $autorizado_final, $operador);
+            $stmt_mov->execute();
             
             $_SESSION['temp_msg'] = "VEHÍCULO REGISTRADO.";
             $_SESSION['temp_type'] = "success"; 
             header("Location: control_garita.php?fase=tripulacion&placa=" . urlencode($placa) . "&mov=" . urlencode($movimiento) . "&empresa=" . urlencode($empresa) . "&auth=" . urlencode($autorizado_final));
             exit();
         } else {
-            $sql_mov = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) 
-                        VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', 'DENEGADO', 'INGRESO RECHAZADO', 'DENEGADO', '$operador', '$obs_rechazo')";
-            mysqli_query($conn, $sql_mov);
+            $denied_mov = 'DENEGADO';
+            $denied_dest = 'INGRESO RECHAZADO';
+            $stmt_mov = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_mov->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $empresa, $denied_mov, $denied_dest, $denied_mov, $operador, $obs_rechazo);
+            $stmt_mov->execute();
 
             $_SESSION['temp_msg'] = "VEHÍCULO CREADO PERO DENEGADO.";
             $_SESSION['temp_type'] = "warning"; 
@@ -172,52 +179,51 @@ if (isset($_POST['btn_crear_vehiculo'])) {
 // LOGICA 2: REGISTRO/EDICION VEHÍCULO EXISTENTE
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar_vehiculo'])) {
-    $placa     = strtoupper(mysqli_real_escape_string($conn, $_POST['placa_final']));
-    $remolque  = mysqli_real_escape_string($conn, $_POST['remolque_final'] ?: '-');
-    $tipo_veh  = mysqli_real_escape_string($conn, $_POST['tipo_final']);
-    $empresa   = mysqli_real_escape_string($conn, $_POST['empresa_final']);
-    $marca_ed  = mysqli_real_escape_string($conn, $_POST['marca_final']);
-    $modelo_ed = mysqli_real_escape_string($conn, $_POST['modelo_final']);
-    $color_ed  = mysqli_real_escape_string($conn, $_POST['color_final']);
-    $anio_ed   = !empty($_POST['anio_final']) ? mysqli_real_escape_string($conn, $_POST['anio_final']) : '-'; 
+    $placa     = strtoupper(trim($_POST['placa_final']));
+    $remolque  = trim($_POST['remolque_final'] ?: '-');
+    $tipo_veh  = trim($_POST['tipo_final']);
+    $empresa   = trim($_POST['empresa_final']);
+    $marca_ed  = trim($_POST['marca_final']);
+    $modelo_ed = trim($_POST['modelo_final']);
+    $color_ed  = trim($_POST['color_final']);
+    $anio_ed   = !empty($_POST['anio_final']) ? trim($_POST['anio_final']) : '-'; 
     
     // Traducimos el SOAT editado
-    $soat_ed   = mysqli_real_escape_string($conn, formatDateForDB($_POST['soat_final']));
+    $soat_ed   = formatDateForDB($_POST['soat_final']);
     
-    $autoriza   = mysqli_real_escape_string($conn, $_POST['jefe_autoriza_final']); 
-    $movimiento = mysqli_real_escape_string($conn, $_POST['tipo_movimiento']);
+    $autoriza   = trim($_POST['jefe_autoriza_final']); 
+    $movimiento = trim($_POST['tipo_movimiento']);
     $operador   = $_SESSION['usuario'];
     $es_rechazo = ($_POST['estado_validacion_final'] === 'NO AUTORIZADO');
-    $obs_rech   = isset($_POST['obs_rechazo_final']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['obs_rechazo_final'])) : '';
+    $obs_rech   = isset($_POST['obs_rechazo_final']) ? strtoupper(trim($_POST['obs_rechazo_final'])) : '';
     
-    // Limpiamos la placa para asegurar que coincida con la Base de Datos aunque le hayan puesto un guion
+    // Limpiamos la placa para asegurar que coincida con la Base de Datos
     $placa_limpia = preg_replace('/[^A-Z0-9]/', '', $placa);
     
-    // UPDATE BLINDADO (Actualizará todo permanentemente)
-    $sql_upd = "UPDATE vehiculos SET 
-                tipo_vehiculo='$tipo_veh', marca='$marca_ed', modelo='$modelo_ed', 
-                color='$color_ed', anio='$anio_ed', empresa_transporte='$empresa', 
-                placa_remolque='$remolque', soat_vcto='$soat_ed' 
-                WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '')='$placa_limpia'";
+    // UPDATE BLINDADO con Prepared Statements
+    $stmt_upd = $conn->prepare("UPDATE vehiculos SET tipo_vehiculo=?, marca=?, modelo=?, color=?, anio=?, empresa_transporte=?, placa_remolque=?, soat_vcto=? WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '')=?");
+    $stmt_upd->bind_param("sssssssss", $tipo_veh, $marca_ed, $modelo_ed, $color_ed, $anio_ed, $empresa, $remolque, $soat_ed, $placa_limpia);
     
-    // AHORA SI FALLA AL GUARDAR, TE AVISARÁ Y SE DETENDRÁ
-    if (!mysqli_query($conn, $sql_upd)) {
-        $_SESSION['temp_msg'] = "Error al guardar cambios del Vehículo: " . mysqli_error($conn);
+    if (!$stmt_upd->execute()) {
+        $_SESSION['temp_msg'] = "Error al guardar cambios del Vehículo.";
         $_SESSION['temp_type'] = "error";
         header("Location: control_garita.php"); exit();
     }
 
     if ($es_rechazo) {
-        $sql = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) 
-                VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', 'DENEGADO', 'INGRESO RECHAZADO', 'DENEGADO', '$operador', '$obs_rech')";
-        mysqli_query($conn, $sql);
+        $denied_mov = 'DENEGADO';
+        $denied_dest = 'INGRESO RECHAZADO';
+        $stmt_rch = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_rch->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $empresa, $denied_mov, $denied_dest, $denied_mov, $operador, $obs_rech);
+        $stmt_rch->execute();
         $_SESSION['temp_msg'] = "ACCESO DENEGADO REGISTRADO.";
         $_SESSION['temp_type'] = "warning";
         header("Location: control_garita.php"); exit();
     } else {
-        $sql = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) 
-                VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', '$movimiento', 'EN TRANSITO', '$autoriza', '$operador')";
-        mysqli_query($conn, $sql);
+        $destino_transito = 'EN TRANSITO';
+        $stmt_ok = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_ok->bind_param("ssssssss", $placa, $remolque, $tipo_veh, $empresa, $movimiento, $destino_transito, $autoriza, $operador);
+        $stmt_ok->execute();
         
         $_SESSION['temp_msg'] = "VEHÍCULO OK. PASE A PERSONAL.";
         $_SESSION['temp_type'] = "success";
@@ -230,76 +236,79 @@ if (isset($_POST['btn_registrar_vehiculo'])) {
 // LOGICA 3: REGISTRO FINAL (PERSONAL)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar_conductor'])) {
-    $dni_c = mysqli_real_escape_string($conn, $_POST['dni_c']); 
-    $nom_c = strtoupper(mysqli_real_escape_string($conn, $_POST['nom_c'])); 
+    $dni_c = preg_replace('/[^0-9]/', '', $_POST['dni_c']); 
+    $nom_c = strtoupper(trim($_POST['nom_c'])); 
     
     // Capturamos los datos editables (Empresa, Área y Cargo)
-    $emp_c = strtoupper(mysqli_real_escape_string($conn, $_POST['emp_c']));
-    $area_c = isset($_POST['area_c']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['area_c'])) : '-';
-    $cargo_c = isset($_POST['cargo_c']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['cargo_c'])) : 'VISITA';
+    $emp_c = strtoupper(trim($_POST['emp_c']));
+    $area_c = isset($_POST['area_c']) ? strtoupper(trim($_POST['area_c'])) : '-';
+    $cargo_c = isset($_POST['cargo_c']) ? strtoupper(trim($_POST['cargo_c'])) : 'VISITA';
     
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = mysqli_real_escape_string($conn, $_POST['tipo_personal_new']); 
-        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni_c'");
-        if (mysqli_num_rows($check) == 0) {
-            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-                        VALUES ('$dni_c', '$nom_c', '-', '$emp_c', '$tipo_p', '$area_c', '$cargo_c', 'ACTIVO')"; 
-            mysqli_query($conn, $sql_new);
+        $tipo_p = trim($_POST['tipo_personal_new']); 
+        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
+        $stmt_chk->bind_param("s", $dni_c);
+        $stmt_chk->execute();
+        if ($stmt_chk->get_result()->num_rows == 0) {
+            $apellido_def = '-';
+            $estado_def = 'ACTIVO';
+            $stmt_new = $conn->prepare("INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_new->bind_param("ssssssss", $dni_c, $nom_c, $apellido_def, $emp_c, $tipo_p, $area_c, $cargo_c, $estado_def);
+            $stmt_new->execute();
         }
     } else {
         // ACTUALIZACIÓN DE DATOS LABORALES SI EL USUARIO LOS MODIFICÓ EN PANTALLA
-        $sql_upd_p = "UPDATE fuerza_laboral SET empresa='$emp_c', area='$area_c', cargo='$cargo_c' WHERE dni='$dni_c'";
-        mysqli_query($conn, $sql_upd_p);
+        $stmt_upd_p = $conn->prepare("UPDATE fuerza_laboral SET empresa=?, area=?, cargo=? WHERE dni=?");
+        $stmt_upd_p->bind_param("ssss", $emp_c, $area_c, $cargo_c, $dni_c);
+        $stmt_upd_p->execute();
     }
 
-    $lic_nro = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_nro']));
-    $lic_cat = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_cat_mtc']));
+    $lic_nro = strtoupper(trim($_POST['lic_nro']));
+    $lic_cat = strtoupper(trim($_POST['lic_cat_mtc']));
     
     // Traducimos las Fechas de la Licencia
-    $lic_f_exp = mysqli_real_escape_string($conn, formatDateForDB($_POST['f_expedicion']));
-    $lic_f_rev = mysqli_real_escape_string($conn, formatDateForDB($_POST['f_revalidacion']));
+    $lic_f_exp = formatDateForDB($_POST['f_expedicion']);
+    $lic_f_rev = formatDateForDB($_POST['f_revalidacion']);
     
-    $lic_res = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_restricciones']));
-    $lic_gs = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_gs']));
-    $lic_cat_mina = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_cat_mina']));
+    $lic_res = strtoupper(trim($_POST['lic_restricciones']));
+    $lic_gs = strtoupper(trim($_POST['lic_gs']));
+    $lic_cat_mina = strtoupper(trim($_POST['lic_cat_mina']));
 
-    $sql_lic = "INSERT INTO detalles_conductor (dni, nro_licencia, categoria_mtc, f_expedicion, f_revalidacion, restricciones, grupo_sanguineo, categoria_mina) 
-                VALUES ('$dni_c', '$lic_nro', '$lic_cat', '$lic_f_exp', '$lic_f_rev', '$lic_res', '$lic_gs', '$lic_cat_mina')
-                ON DUPLICATE KEY UPDATE 
-                nro_licencia='$lic_nro', categoria_mtc='$lic_cat', f_expedicion='$lic_f_exp', f_revalidacion='$lic_f_rev', restricciones='$lic_res', grupo_sanguineo='$lic_gs', categoria_mina='$lic_cat_mina'";
-    mysqli_query($conn, $sql_lic);
+    $stmt_lic = $conn->prepare("INSERT INTO detalles_conductor (dni, nro_licencia, categoria_mtc, f_expedicion, f_revalidacion, restricciones, grupo_sanguineo, categoria_mina) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE nro_licencia=VALUES(nro_licencia), categoria_mtc=VALUES(categoria_mtc), f_expedicion=VALUES(f_expedicion), f_revalidacion=VALUES(f_revalidacion), restricciones=VALUES(restricciones), grupo_sanguineo=VALUES(grupo_sanguineo), categoria_mina=VALUES(categoria_mina)");
+    $stmt_lic->bind_param("ssssssss", $dni_c, $lic_nro, $lic_cat, $lic_f_exp, $lic_f_rev, $lic_res, $lic_gs, $lic_cat_mina);
+    $stmt_lic->execute();
 
     // Acompañantes
-    $ac1 = mysqli_real_escape_string($conn, $_POST['ac1'] ?: 'NINGUNO'); 
-    $ac2 = mysqli_real_escape_string($conn, $_POST['ac2'] ?: 'NINGUNO');
-    $ac3 = mysqli_real_escape_string($conn, $_POST['ac3'] ?: 'NINGUNO'); 
-    $ac4 = mysqli_real_escape_string($conn, $_POST['ac4'] ?: 'NINGUNO');
+    $ac1 = $_POST['ac1'] ?: 'NINGUNO'; 
+    $ac2 = $_POST['ac2'] ?: 'NINGUNO';
+    $ac3 = $_POST['ac3'] ?: 'NINGUNO'; 
+    $ac4 = $_POST['ac4'] ?: 'NINGUNO';
     
     // DATOS DE ORIGEN Y DESTINO
-    $origen_ui = isset($_POST['origen_ui']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['origen_ui'])) : 'NO ESPECIFICADO';
-    $destino_ui = isset($_POST['destino_ui']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['destino_ui'])) : 'NO ESPECIFICADO';
+    $origen_ui = isset($_POST['origen_ui']) ? strtoupper(trim($_POST['origen_ui'])) : 'NO ESPECIFICADO';
+    $destino_ui = isset($_POST['destino_ui']) ? strtoupper(trim($_POST['destino_ui'])) : 'NO ESPECIFICADO';
     
-    $obs_raw = mysqli_real_escape_string($conn, $_POST['obs'] ?: '');
+    $obs_raw = $_POST['obs'] ?: '';
     $obs_final = "ORIGEN: " . $origen_ui . ". " . $obs_raw;
 
-    $anfitrion = isset($_POST['anfitrion']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['anfitrion'])) : '-';
-    $motivo    = isset($_POST['motivo']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['motivo'])) : '-';
-    $tipo_mov  = mysqli_real_escape_string($conn, $_POST['mov_vehiculo']);
+    $anfitrion = isset($_POST['anfitrion']) ? strtoupper(trim($_POST['anfitrion'])) : '-';
+    $motivo    = isset($_POST['motivo']) ? strtoupper(trim($_POST['motivo'])) : '-';
+    $tipo_mov  = trim($_POST['mov_vehiculo']);
     
-    $placa_veh = mysqli_real_escape_string($conn, $_POST['placa_vehiculo']);
-    $autorizado_por = mysqli_real_escape_string($conn, $_POST['auth_vehiculo']); 
+    $placa_veh = trim($_POST['placa_vehiculo']);
+    $autorizado_por = trim($_POST['auth_vehiculo']); 
     $op        = $_SESSION['usuario'];
 
-    $sql_reg = "INSERT INTO registros_garita (placa_unidad, dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso, autorizado_por) 
-                VALUES ('$placa_veh', '$dni_c', '$nom_c', '$emp_c', '$tipo_mov', '$destino_ui', '$ac1', '$ac2', '$ac3', '$ac4', '$obs_final', '$anfitrion', '$motivo', '$op', NOW(), '$autorizado_por')";
+    $stmt_reg = $conn->prepare("INSERT INTO registros_garita (placa_unidad, dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso, autorizado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    $stmt_reg->bind_param("sssssssssssssss", $placa_veh, $dni_c, $nom_c, $emp_c, $tipo_mov, $destino_ui, $ac1, $ac2, $ac3, $ac4, $obs_final, $anfitrion, $motivo, $op, $autorizado_por);
     
-    if (mysqli_query($conn, $sql_reg)) {
+    if ($stmt_reg->execute()) {
         $_SESSION['temp_msg'] = "REGISTRO COMPLETADO.";
         $_SESSION['temp_type'] = "success";
         header("Location: control_garita.php"); 
         exit();
     } else {
-        $mensaje = "Error al guardar: " . mysqli_error($conn); $tipo_mensaje = "error";
+        $mensaje = "Error al guardar. Intente nuevamente."; $tipo_mensaje = "error";
     }
 }
 
@@ -315,6 +324,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SITRAN | Control Integral</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -821,13 +831,14 @@ $res_hist = mysqli_query($conn, $sql_hist);
             $v_mov = $row['tipo_movimiento'];
             $dni_c = $row['dni_conductor'];
             
-            // Obtenemos detalles extra del conductor
-            $sql_det = "SELECT f.area, f.cargo, d.nro_licencia, d.categoria_mtc, d.f_expedicion, d.f_revalidacion, d.restricciones, d.grupo_sanguineo, d.categoria_mina 
+            // Obtenemos detalles extra del conductor (Prepared Statement)
+            $stmt_det = $conn->prepare("SELECT f.area, f.cargo, d.nro_licencia, d.categoria_mtc, d.f_expedicion, d.f_revalidacion, d.restricciones, d.grupo_sanguineo, d.categoria_mina 
                         FROM fuerza_laboral f
                         LEFT JOIN detalles_conductor d ON f.dni = d.dni
-                        WHERE f.dni = '$dni_c' LIMIT 1";
-            $res_det = mysqli_query($conn, $sql_det);
-            $row_d = mysqli_fetch_assoc($res_det);
+                        WHERE f.dni = ? LIMIT 1");
+            $stmt_det->bind_param("s", $dni_c);
+            $stmt_det->execute();
+            $row_d = $stmt_det->get_result()->fetch_assoc();
 
             $conductor = $row['nombre_conductor'];
             $auth_final = $row['autorizado_por'];
