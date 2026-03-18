@@ -2,7 +2,6 @@
 // ==============================================================================
 // BUSCAR DATOS (VEHÍCULOS Y SOAT) - PROTECCIÓN ESTRICTA DE TOKENS
 // ==============================================================================
-error_reporting(0); // Evitar que errores PHP rompan la respuesta JSON
 header('Content-Type: application/json; charset=utf-8');
 
 // 1. CONEXIÓN DIRECTA

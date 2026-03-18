@@ -2,7 +2,6 @@
 // ==============================================================================
 // BUSCAR PERSONA Y LICENCIA - MOTOR TURBO OPTIMIZADO (SITRAN)
 // ==============================================================================
-error_reporting(0); // Evita que errores PHP rompan el formato JSON
 header('Content-Type: application/json; charset=utf-8');
 
 // 1. CONEXIÓN A BASE DE DATOS

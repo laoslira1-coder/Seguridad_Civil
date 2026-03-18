@@ -5,11 +5,7 @@
 ob_start(); 
 session_start();
 
-// 1. CONFIGURACIÓN DE ERRORES (Silenciosos para no romper JSON)
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
-// 2. CONEXIÓN BLINDADA
+// 1. CONEXIÓN
 require_once 'config.php';
 // $conn ya está disponible desde config.php con charset utf8
 date_default_timezone_set('America/Lima');

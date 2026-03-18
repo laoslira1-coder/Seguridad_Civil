@@ -5,11 +5,6 @@
 ob_start();
 session_start();
 
-// Configuración de errores (Esto evita la pantalla blanca y muestra el error real si ocurre)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 date_default_timezone_set('America/Lima');
 
 // 1. CONEXIÓN

@@ -4,6 +4,11 @@
 // Incluir este archivo en todos los PHP con: require_once 'config.php';
 // ==============================================================================
 
+// Manejo de errores: se registran en log, nunca se muestran al usuario
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
 $servidor   = "localhost";
 $usuario    = "u480700204_hocsegcivil";
 $password   = "Mina_2026";

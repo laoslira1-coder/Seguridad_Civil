@@ -2,12 +2,6 @@
 ob_start();
 session_start();
 
-// 1. CONFIGURACIÓN ROBUSTA
-$driver = new mysqli_driver();
-$driver->report_mode = MYSQLI_REPORT_OFF; 
-ini_set('display_errors', 0); 
-error_reporting(E_ALL);
-
 date_default_timezone_set('America/Lima');
 
 // 2. CONEXIÓN

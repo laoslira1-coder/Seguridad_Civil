@@ -2,17 +2,62 @@
 session_start();
 if (!isset($_SESSION['usuario'])) { header("Location: index.php"); exit(); }
 
-// 1. CONFIGURACIÓN DE HEADERS PARA EXCEL
+require_once 'config.php';
+
+// Si no se enviaron fechas, mostrar formulario de selección
+if (empty($_GET['fecha_desde']) || empty($_GET['fecha_hasta'])) {
+    $hoy = date('Y-m-d');
+    $primer_dia_mes = date('Y-m-01');
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Exportar Reporte Excel - SITRAN</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1c1e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #2a2c2e; border: 1px solid #c5a059; border-radius: 8px; padding: 32px 40px; min-width: 360px; text-align: center; }
+        h2 { color: #c5a059; margin-bottom: 8px; }
+        p { color: #aaa; font-size: 13px; margin-bottom: 24px; }
+        label { display: block; text-align: left; font-size: 13px; color: #ccc; margin-bottom: 4px; margin-top: 14px; }
+        input[type=date] { width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #555; background: #1a1c1e; color: #fff; font-size: 14px; box-sizing: border-box; }
+        button { margin-top: 24px; width: 100%; padding: 10px; background: #c5a059; color: #1a1c1e; font-weight: bold; font-size: 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #d4b06a; }
+        .back { display: block; margin-top: 14px; font-size: 12px; color: #888; text-decoration: none; }
+        .back:hover { color: #c5a059; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>Exportar a Excel</h2>
+    <p>Selecciona el rango de fechas para el reporte.</p>
+    <form method="GET">
+        <label>Fecha desde</label>
+        <input type="date" name="fecha_desde" value="<?php echo $primer_dia_mes; ?>" required>
+        <label>Fecha hasta</label>
+        <input type="date" name="fecha_hasta" value="<?php echo $hoy; ?>" required>
+        <button type="submit">Descargar Excel</button>
+    </form>
+    <a class="back" href="panel.php">← Volver al panel</a>
+</div>
+</body>
+</html>
+<?php
+    exit();
+}
+
+// Validar y sanitizar fechas
+$fecha_desde = date('Y-m-d', strtotime($_GET['fecha_desde']));
+$fecha_hasta = date('Y-m-d', strtotime($_GET['fecha_hasta']));
+
+// HEADERS PARA DESCARGA EXCEL
 header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-header("Content-Disposition: attachment; filename=Reporte_SITRAN_" . date('Y-m-d_H-i') . ".xls");
+header("Content-Disposition: attachment; filename=Reporte_SITRAN_{$fecha_desde}_{$fecha_hasta}.xls");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// 2. CONEXIÓN A BASE DE DATOS
-require_once 'config.php';
-// $conn disponible desde config.php (Hostinger)
-// 3. CONSULTA SQL
-$sql = "SELECT 
+// CONSULTA SQL CON FILTRO DE FECHAS
+$stmt = mysqli_prepare($conn, "SELECT
             r.id,
             r.fecha_ingreso,
             r.tipo_movimiento,
@@ -42,9 +87,11 @@ $sql = "SELECT
         FROM registros_garita r
         LEFT JOIN vehiculos v ON r.placa_unidad = v.placa
         LEFT JOIN detalles_conductor d ON r.dni_conductor = d.dni
-        ORDER BY r.fecha_ingreso DESC"; 
-
-$resultado = mysqli_query($conn, $sql);
+        WHERE DATE(r.fecha_ingreso) BETWEEN ? AND ?
+        ORDER BY r.fecha_ingreso DESC");
+mysqli_stmt_bind_param($stmt, 'ss', $fecha_desde, $fecha_hasta);
+mysqli_stmt_execute($stmt);
+$resultado = mysqli_stmt_get_result($stmt);
 ?>
 
 <!DOCTYPE html>
@@ -160,30 +207,30 @@ $resultado = mysqli_query($conn, $sql);
                 <td class="text-center"><?php echo $hora_solo; ?></td>
                 <td class="text-center text-bold <?php echo $estilo_mov; ?>"><?php echo $row['tipo_movimiento']; ?></td>
                 
-                <td><?php echo utf8_decode($jefe_turno); ?></td>
-                <td><?php echo utf8_decode($solicitante); ?></td>
-                
-                <td class="text-center"><?php echo utf8_decode($origen_final); ?></td>
-                <td class="text-center"><?php echo utf8_decode($row['destino']); ?></td>
-                
+                <td><?php echo mb_convert_encoding($jefe_turno, 'ISO-8859-1', 'UTF-8'); ?></td>
+                <td><?php echo mb_convert_encoding($solicitante, 'ISO-8859-1', 'UTF-8'); ?></td>
+
+                <td class="text-center"><?php echo mb_convert_encoding($origen_final, 'ISO-8859-1', 'UTF-8'); ?></td>
+                <td class="text-center"><?php echo mb_convert_encoding($row['destino'], 'ISO-8859-1', 'UTF-8'); ?></td>
+
                 <td class="text-center"><?php echo $row['tipo_vehiculo']; ?></td>
                 <td class="text-center"><?php echo $row['marca']; ?></td>
                 <td class="text-center"><?php echo $row['modelo']; ?></td>
                 <td class="text-center"><?php echo $row['anio']; ?></td>
                 <td class="text-center text-bold"><?php echo $row['placa_unidad']; ?></td>
                 <td class="text-center"><?php echo $row['soat_vcto']; ?></td>
-                <td><?php echo utf8_decode($row['empresa']); ?></td>
-                
+                <td><?php echo mb_convert_encoding($row['empresa'], 'ISO-8859-1', 'UTF-8'); ?></td>
+
                 <td class="text-center" style="mso-number-format:'\@';"><?php echo $row['dni_conductor']; ?></td>
-                <td><?php echo utf8_decode($row['nombre_conductor']); ?></td>
-                
+                <td><?php echo mb_convert_encoding($row['nombre_conductor'], 'ISO-8859-1', 'UTF-8'); ?></td>
+
                 <td class="text-center"><?php echo $row['nro_licencia']; ?></td>
                 <td class="text-center"><?php echo $row['categoria_mtc']; ?></td>
                 <td class="text-center"><?php echo $row['f_revalidacion']; ?></td>
                 <td class="text-center"><?php echo $row['categoria_mina']; ?></td>
-                
-                <td style="font-size: 10px;"><?php echo utf8_decode($lista_ac); ?></td>
-                <td><?php echo utf8_decode($obs_limpia); ?></td>
+
+                <td style="font-size: 10px;"><?php echo mb_convert_encoding($lista_ac, 'ISO-8859-1', 'UTF-8'); ?></td>
+                <td><?php echo mb_convert_encoding($obs_limpia, 'ISO-8859-1', 'UTF-8'); ?></td>
                 <td><?php echo $row['operador_garita']; ?></td>
             </tr>
         <?php } ?>
