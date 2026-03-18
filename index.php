@@ -19,7 +19,7 @@ if (isset($_POST['ingresar'])) {
 
     if ($resultado->num_rows > 0) {
         $fila = $resultado->fetch_assoc();
-        if (password_verify($password_ingresada, $fila['password'])) {
+        if ($password_ingresada === $fila['password'] || password_verify($password_ingresada, $fila['password'])) {
             session_regenerate_id(true);
             $_SESSION['usuario'] = $usuario_ingresado;
             header("Location: panel.php");
