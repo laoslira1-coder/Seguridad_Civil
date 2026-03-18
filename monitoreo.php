@@ -252,8 +252,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         /* LAYOUT PRINCIPAL */
         .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
-        @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
-
+        @media (max-width: 1200px) { 
+            .main-grid { grid-template-columns: 1fr; } 
+            .search-section { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 600px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .kpi-text h1 { font-size: 2rem; }
+        }
         .content-box { 
             background: var(--white); 
             border-radius: 4px; 

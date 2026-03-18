@@ -422,6 +422,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
         .btn-register { background: linear-gradient(135deg, #166534 0%, #14532d 100%); color: white; width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 16px; margin-top: 10px; }
         .btn-register.btn-out { background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%); }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) { .grid-datos { grid-template-columns: 1fr; } }
         .dato-input { background: white !important; border: 1px solid #cbd5e1 !important; color: var(--h-dark); font-weight: 700; padding: 12px; font-size: 14px; }
         .full-width { grid-column: span 2; }
         .history-container { padding-left: 20px; border-left: 2px solid #e2e8f0; grid-column: span 2; margin-top: 20px; }
@@ -545,7 +546,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
         </header>
 
         <div class="content-body">
-            <div class="container" style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="container">
     
     <?php if ($fase_actual !== 'tripulacion'): ?>
     
@@ -679,17 +680,17 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <label>Placa Unidad</label>
                 <input type="text" name="new_placa" id="new_placa" readonly style="background:#e2e8f0; color:#64748b;">
                 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="grid-datos">
                     <div><label>Tipo</label><input type="text" name="new_tipo" required></div>
                     <div><label>Remolque</label><input type="text" name="new_remolque"></div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="grid-datos">
                     <div><label>Marca</label><input type="text" name="new_marca" required></div>
                     <div><label>Modelo</label><input type="text" name="new_modelo" required></div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="grid-datos">
                     <div><label>Color</label><input type="text" name="new_color" required></div>
                     <div>
                         <label>Año (Min: 2023)</label>
