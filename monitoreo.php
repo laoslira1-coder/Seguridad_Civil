@@ -165,9 +165,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             background: var(--black-soft);
             padding: 25px 35px;
             display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            grid-template-columns: 1fr 1fr 320px;
             gap: 25px;
-            align-items: flex-end;
+            align-items: end;
             border-bottom: 2px solid var(--gray-dark);
         }
 
@@ -182,15 +182,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             letter-spacing: 1.5px;
         }
         .input-wrapper { position: relative; }
-        .input-wrapper input { 
-            width: 100%; 
-            background: var(--gray-dark); 
-            border: 1px solid rgba(197, 160, 89, 0.3); 
-            padding: 14px 14px 14px 48px; 
-            border-radius: 6px; 
-            color: white; 
-            font-size: 13px; 
-            outline: none; 
+        .input-wrapper input {
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--gray-dark);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            padding: 14px 14px 14px 48px;
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            outline: none;
             transition: all 0.3s;
         }
         .input-wrapper input:focus { 
@@ -418,7 +419,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div style="display:flex; flex-direction:column; gap:8px;">
         <label style="font-size:10px; color:var(--gold); font-weight:800; letter-spacing:1px;">CALENDARIO</label>
         <div style="display:flex; gap:12px;">
-            <input type="date" id="filter-date" value="<?= date('Y-m-d') ?>" style="background:var(--gray-dark); border:1px solid var(--gold); color:white; padding:12px; border-radius:4px; font-size:14px; outline:none;" onchange="loadDashboard()">
+            <input type="date" id="filter-date" value="<?= date('Y-m-d') ?>" style="background:var(--gray-dark); border:1px solid var(--gold); color:white; padding:12px; border-radius:4px; font-size:14px; outline:none; min-width:160px; box-sizing:border-box;" onchange="loadDashboard()">
             <button onclick="loadDashboard()" id="btn-refresh" class="btn-refresh">
                 <i class="fa-solid fa-sync"></i> ACTUALIZAR
             </button>
