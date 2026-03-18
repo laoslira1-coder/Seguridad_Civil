@@ -383,19 +383,42 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     </div>
 </div>
 
-<header class="header-main">
-    <div class="brand">
-        <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
-        <span class="brand-text">SITRAN MASTER MONITOR</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:25px;">
-        <div style="text-align:right;">
-            <div style="font-size:14px; font-weight:800; color:var(--gold); letter-spacing:1px;"><?php echo strtoupper($_SESSION['usuario']); ?></div>
-            <div style="font-size:10px; color:#666; font-weight:700;">COMMAND CENTER</div>
+<div class="app-layout">
+    
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SITRAN</h2>
         </div>
-        <a href="panel.php" style="color:var(--gold); font-size:24px; transition:0.3s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gold)'"><i class="fa-solid fa-house-chimney"></i></a>
-    </div>
-</header>
+        <div class="sidebar-menu">
+            <div class="menu-label">Principal</div>
+            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="monitoreo.php" class="sidebar-link active"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
+            
+            <div class="menu-label" style="margin-top: 20px;">Operación</div>
+            <a href="control_garita_principal.php" class="sidebar-link"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
+        </div>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content" style="background: var(--black-soft); min-height: 100vh;">
+        <!-- TOPBAR OVERRIDE FOR DARK THEME -->
+        <header class="topbar" style="background: var(--black); border-bottom: 2px solid var(--gold);">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()" style="color:var(--gold);"><i class="fa-solid fa-bars"></i></button>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-family:'Orbitron'; color:var(--gold); font-weight:700; font-size:1.1rem; letter-spacing:2px;">SITRAN MASTER MONITOR</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div style="text-align:right;">
+                    <div style="font-size:12px; font-weight:800; color:var(--gold); letter-spacing:1px;"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+                    <div style="font-size:9px; color:#666; font-weight:700;">COMMAND CENTER</div>
+                </div>
+            </div>
+        </header>
 
 <div class="search-section">
     <!-- BUSCADOR INDEPENDIENTE DE PERSONAL -->
@@ -576,7 +599,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     function closeModal() { document.getElementById('modal-person').style.display = 'none'; }
     window.onclick = (e) => { if(e.target == document.getElementById('modal-person')) closeModal(); }
 
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
     document.addEventListener('DOMContentLoaded', () => loadDashboard());
 </script>
+
+    </div> <!-- End main-content -->
+</div> <!-- End app-layout -->
+
 </body>
 </html>

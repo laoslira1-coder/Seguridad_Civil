@@ -507,32 +507,59 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<nav class="header-main">
-    <div class="nav-left">
-        <a href="control_garita_principal.php" class="btn-back"><i class="fa-solid fa-chevron-left"></i></a>
-        <a href="reporte_excel.php" style="background:#166534; color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-file-excel"></i> DATA
-        </a>
-    </div>
-    <div class="logo-container">
-        <img src="Assets Index/logo.png" class="logo-header">
-        <img src="Assets Index/seguridadcivil.png" class="logo-header">
-    </div>
-</nav>
+<div class="app-layout">
+    
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SITRAN</h2>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-label">Principal</div>
+            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
+            
+            <div class="menu-label" style="margin-top: 20px;">Operación</div>
+            <a href="control_garita_principal.php" class="sidebar-link active"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
+        </div>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<div class="container">
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <a href="control_garita_principal.php" style="color:var(--text-primary);"><i class="fa-solid fa-chevron-left"></i></a>
+                    <span style="font-weight:700; font-size:14px; color:var(--text-primary);">GARITA</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <a href="reporte_excel.php" target="_blank" style="background:var(--color-success); color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:700; font-size:11px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-file-excel"></i> DATA
+                </a>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
     
     <?php if ($fase_actual !== 'tripulacion'): ?>
     
     <!-- FASE 1: VALIDACIÓN -->
-    <div class="card" id="cardValidacion">
+    <div class="glass-card" id="cardValidacion" style="margin-bottom: 20px; align-self: start;">
         <div class="card-header"><h2><i class="fa-solid fa-shield-halved"></i> 1. Validación Previa</h2></div>
         <form method="POST" id="formMain">
-            <label>Placa Unidad</label>
-            <input type="text" id="inputPlaca" placeholder="ABC-123" maxlength="10">
+            <div class="floating-group">
+                <input type="text" id="inputPlaca" class="floating-input" placeholder=" " maxlength="10" autocomplete="off" style="font-size: 24px; text-align: center; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; text-transform: uppercase;">
+                <label class="floating-label">PLACA UNIDAD</label>
+            </div>
 
             <label>Estado de Autorización</label>
-            <select id="selectEstado" onchange="toggleJefe()">
+            <select id="selectEstado" class="input-comp" onchange="toggleJefe()" style="margin-bottom: 20px;">
                 <option value="">-- SELECCIONE --</option>
                 <option value="AUTORIZADO">AUTORIZADO (Ingreso/Salida)</option>
                 <option value="NO AUTORIZADO">NO AUTORIZADO (Registrar Rechazo)</option>
@@ -575,7 +602,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 
     <!-- FASE 2: FICHA TÉCNICA -->
-    <div class="card" id="cardResultado" style="display:none;">
+    <div class="glass-card" id="cardResultado" style="display:none; margin-bottom: 20px; align-self: start;">
         <div class="card-header" id="headerResultado"><h2><i class="fa-solid fa-truck-front"></i> 2. Ficha Técnica</h2></div>
 
         <div id="estadoEspera" style="text-align:center; padding:40px; color:#cbd5e1;">
@@ -1302,7 +1329,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
         if(estado == "") { Swal.fire('Atención', 'Seleccione un Estado', 'warning'); return; }
         if(estado == "AUTORIZADO" && (jefe == "" || autoriza == "")) { Swal.fire('Atención', 'Seleccione quién autoriza y el Jefe de Turno', 'warning'); return; }
 
-        $("#estadoEspera").html('<i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...');
+        let skeletonHTML = `
+        <div class="skeleton-loader">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text short"></div>
+            <div class="skeleton skeleton-box" style="margin-top:10px;"></div>
+        </div>
+        <div style="text-align:center; margin-top:10px; color:var(--text-muted); font-size:12px; font-weight:700;"><i class="fa-solid fa-circle-notch fa-spin"></i> CONSULTANDO FACTILIZA...</div>
+        `;
+        $("#estadoEspera").html(skeletonHTML);
         $("#fichaVehiculo").hide(); $("#formNuevoVehiculo").hide();
 
         $.ajax({
@@ -1458,7 +1494,17 @@ $res_hist = mysqli_query($conn, $sql_hist);
     }
 
     function closeDetails() { document.getElementById('details-modal').style.display = 'none'; }
+    
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
 </script>
+
+            </div> <!-- End container -->
+        </div> <!-- End content-body -->
+    </div> <!-- End main-content -->
+</div> <!-- End app-layout -->
 
 </body>
 </html>

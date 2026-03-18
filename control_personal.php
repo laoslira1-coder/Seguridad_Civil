@@ -228,16 +228,45 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<nav class="header-main">
-    <a href="control_garita_principal.php" style="color:#333; font-size:22px;"><i class="fa-solid fa-chevron-left"></i></a>
-    <div style="display:flex; gap:15px;">
-        <img src="Assets Index/logo.png" class="logo-header">
-        <img src="Assets Index/seguridadcivil.png" class="logo-header">
-    </div>
-    <div style="width:22px;"></div>
-</nav>
+<div class="app-layout">
+    
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SITRAN</h2>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-label">Principal</div>
+            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
+            
+            <div class="menu-label" style="margin-top: 20px;">Operación</div>
+            <a href="control_garita_principal.php" class="sidebar-link active"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
+        </div>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<div class="container">
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <a href="control_garita_principal.php" style="color:var(--text-primary);"><i class="fa-solid fa-chevron-left"></i></a>
+                    <span style="font-weight:700; font-size:14px; color:var(--text-primary);">CONTROL PERSONAL</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <a href="reporte_excel.php" target="_blank" style="background:var(--color-success); color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:700; font-size:11px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-file-excel"></i> DATA
+                </a>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="container" style="max-width: 600px; margin: 0 auto; width:100%;">
     
     <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div> <?php endif; ?>
 
@@ -471,7 +500,17 @@ $res_hist = mysqli_query($conn, $sql_hist);
             document.getElementById('formScan').submit();
         });
     }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
 </script>
+
+            </div> <!-- End container -->
+        </div> <!-- End content-body -->
+    </div> <!-- End main-content -->
+</div> <!-- End app-layout -->
 
 </body>
 </html>

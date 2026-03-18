@@ -10,6 +10,7 @@ if (!isset($_SESSION['usuario'])) {
 // 2. CONEXIÓN A LA BASE DE DATOS
 require_once 'config.php';
 // $conn disponible desde config.php (Hostinger)
+
 // 3. RECUPERAR DATOS EXACTOS
 $usuario_session = $_SESSION['usuario'];
 $stmt_user = $conn->prepare("SELECT nombre, cargo_real FROM usuarios WHERE nombre_usuario = ? LIMIT 1");
@@ -38,63 +39,14 @@ if ($res_user && $res_user->num_rows > 0) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
     <style>
-        :root { 
-            --h-gold: #c5a059; 
-            --h-dark: #1a1c1e; 
-            --h-gray-bg: #f4f4f7; 
-            --h-white: #ffffff; 
-            --text-700: #1e293b;
-            --text-500: #475569;
-            --text-300: #94a3b8;
-            --radius-lg: 24px;
-            --radius-md: 16px;
-        }
-
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: var(--h-gray-bg); 
-            margin: 0; 
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* --- HEADER --- */
-        .header-main { 
-            background: var(--h-white); 
-            padding: 20px; 
-            text-align: center;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        
-        .logo-container-top {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px; 
-            margin-bottom: 10px;
-        }
-
-        .logo-header { height: 60px; object-fit: contain; }
-        .system-subtitle { display: block; font-size: 9px; font-weight: 700; color: var(--text-300); text-transform: uppercase; letter-spacing: 3px; }
-
-        .logout-link {
-            position: absolute; top: 25px; right: 20px;
-            color: var(--text-300); font-size: 20px; transition: 0.3s;
-            text-decoration: none;
-        }
-        .logout-link:hover { color: #ef4444; transform: scale(1.1); }
-
-        /* --- CONTENIDO --- */
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; flex: 1; width: 100%; box-sizing: border-box; }
+        /* Panel specific overrides */
+        body { font-family: 'Poppins', sans-serif; }
+        .container { max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
         /* TARJETA BIENVENIDA */
         .welcome-card {
             background: var(--h-dark);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-2xl);
             padding: 40px 20px;
             color: var(--h-white);
             text-align: center;
@@ -156,8 +108,10 @@ if ($res_user && $res_user->num_rows > 0) {
         
         .menu-item { 
             display: flex; align-items: center; 
-            background: var(--h-white); padding: 20px; 
-            border-radius: var(--radius-md); 
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: var(--radius-lg); 
             text-decoration: none; border: 1px solid #edf2f7;
             transition: 0.3s ease;
             position: relative;
@@ -175,105 +129,138 @@ if ($res_user && $res_user->num_rows > 0) {
             display: flex; justify-content: center; align-items: center; 
             margin-right: 18px; flex-shrink: 0;
             transition: 0.3s;
-            color: var(--h-gold);
+            color: var(--text-primary);
             font-size: 22px; 
         }
         
         .menu-item:hover .icon-box { background: var(--h-gold); color: white; }
 
-        .text-box h3 { margin: 0; font-size: 15px; color: var(--text-700); font-weight: 700; }
-        .text-box p { margin: 2px 0 0; font-size: 12px; color: var(--text-500); }
+        .text-box h3 { margin: 0; font-size: 16px; color: var(--text-primary); font-weight: 700; transition: 0.2s;}
+        .menu-item:hover .text-box h3 { color: var(--h-gold); }
+        .text-box p { margin: 4px 0 0; font-size: 12px; color: var(--text-secondary); }
 
-        /* Estilos para el nuevo Badge LIVE */
         .badge-live {
-            background: #ef4444; color: white; font-size: 8px; font-weight: 800;
-            padding: 3px 8px; border-radius: 20px; position: absolute; top: 15px; right: 15px;
+            background: #ef4444; color: white; font-size: 9px; font-weight: 800;
+            padding: 4px 10px; border-radius: 20px; position: absolute; top: 20px; right: 20px;
             animation: pulse-red 2s infinite;
         }
-        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
         /* --- FOOTER --- */
-        .footer { background: #f1f5f9; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .footer { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
         .logos-footer { display: flex; gap: 30px; align-items: center; }
-        .logo-footer-bottom { height: 60px; cursor: pointer; transition: 0.3s; filter: grayscale(0.5); opacity: 0.7; }
+        .logo-footer-bottom { height: 60px; cursor: pointer; transition: 0.3s; filter: grayscale(1); opacity: 0.5; }
         .logo-footer-bottom:hover { filter: grayscale(0); opacity: 1; transform: scale(1.05); }
-        .footer-text { font-size: 10px; color: #94a3b8; letter-spacing: 2px; font-weight: 700; }
+        .footer-text { font-size: 10px; color: var(--text-muted); letter-spacing: 2px; font-weight: 700; }
     </style>
 </head>
 <body>
 
-<nav class="header-main">
-    <div class="logo-container-top">
-        <img src="Assets Index/logo.png" alt="Hochschild SC" class="logo-header">
-        <img src="Assets Index/seguridadcivil.png" alt="Logo Seguridad Civil" class="logo-header">
-    </div>
-    <span class="system-subtitle">Sistema de Control Integrado</span>
-    <a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i></a>
-</nav>
+<div class="app-layout">
+    
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SITRAN</h2>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-label">Principal</div>
+            <a href="panel.php" class="sidebar-link active"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
+            
+            <div class="menu-label" style="margin-top: 20px;">Operación</div>
+            <a href="control_garita_principal.php" class="sidebar-link"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
+        </div>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<div class="container">
-    <!-- TARJETA BIENVENIDA -->
-    <div class="welcome-card">
-        <h2>BIENVENIDO</h2>
-        <div class="role-badge"><?php echo mb_strtoupper($cargo_real); ?></div>
-        <h1><?php echo mb_strtoupper($nombre_completo); ?></h1>
-    </div>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="Assets Index/seguridadcivil.png" alt="Seguridad Civil" style="height: 30px;">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <div class="user-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="user-info">
+                        <span class="user-name"><?php echo mb_strtoupper((explode(' ', $nombre_completo))[0]); ?></span>
+                        <span class="user-role">OPERADOR</span>
+                    </div>
+                </div>
+                <a href="logout.php" style="color: var(--color-danger); font-size: 18px; margin-left: 10px;"><i class="fa-solid fa-power-off"></i></a>
+            </div>
+        </header>
 
-    <div class="menu-list">
-        <!-- BOTÓN 0: CENTRO DE MONITOREO (RESTRICCIÓN DE JEFATURA ELIMINADA) -->
-        <a href="monitoreo.php" class="menu-item" style="border-left: 5px solid var(--h-gold);">
-            <div class="icon-box" style="background: rgba(197, 160, 89, 0.1);">
-                <i class="fa-solid fa-desktop"></i>
-            </div>
-            <div class="text-box">
-                <h3 style="color: var(--h-gold);">Centro de Monitoreo Real-Time</h3>
-                <p>KPIs operativos, aforo en vivo y radar de movimientos.</p>
-            </div>
-            <span class="badge-live">LIVE</span>
-        </a>
+        <!-- CONTENT BODY -->
+        <div class="content-body">
+            <div class="container">
+                <!-- TARJETA BIENVENIDA -->
+                <div class="welcome-card">
+                    <h2>BIENVENIDO</h2>
+                    <div class="role-badge"><?php echo mb_strtoupper($cargo_real); ?></div>
+                    <h1><?php echo mb_strtoupper($nombre_completo); ?></h1>
+                </div>
 
-        <!-- BOTÓN 1: CONTROL DE ACCESO INTEGRAL -->
-        <a href="control_garita_principal.php" class="menu-item">
-            <div class="icon-box">
-                <i class="fa-solid fa-id-card-clip"></i>
-            </div>
-            <div class="text-box">
-                <h3>Control de Acceso Integral</h3>
-                <p>Gestión centralizada de ingresos, personal y vehículos.</p>
-            </div>
-        </a>
+                <div class="menu-list">
+                    <!-- BOTÓN 0: CENTRO DE MONITOREO -->
+                    <a href="monitoreo.php" class="menu-item" style="border-left: 5px solid var(--h-gold);">
+                        <div class="icon-box" style="background: rgba(197, 160, 89, 0.1); color: var(--h-gold);">
+                            <i class="fa-solid fa-desktop"></i>
+                        </div>
+                        <div class="text-box">
+                            <h3>Centro de Monitoreo Real-Time</h3>
+                            <p>KPIs operativos, aforo en vivo y radar de movimientos.</p>
+                        </div>
+                        <span class="badge-live">LIVE</span>
+                    </a>
 
-        <!-- BOTÓN 2: PLAN TORQUE -->
-        <a href="#" class="menu-item" onclick="alert('Módulo de Plan Torque y Procedimientos estará disponible próximamente.')">
-            <div class="icon-box">
-                <i class="fa-solid fa-file-contract"></i>
-            </div>
-            <div class="text-box">
-                <h3>Plan Torque y Procedimientos</h3>
-                <p>Consulta de lineamientos y documentación operativa.</p>
-            </div>
-        </a>
+                    <!-- BOTÓN 1: CONTROL DE ACCESO INTEGRAL -->
+                    <a href="control_garita_principal.php" class="menu-item">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="text-box">
+                            <h3>Control de Acceso Integral</h3>
+                            <p>Gestión centralizada de ingresos, personal y vehículos.</p>
+                        </div>
+                    </a>
 
-        <!-- BOTÓN 3: CAPACITACIONES -->
-        <a href="#" class="menu-item" onclick="alert('Módulo de Capacitaciones estará disponible próximamente.')">
-            <div class="icon-box">
-                <i class="fa-solid fa-graduation-cap"></i>
+                    <!-- BOTÓN 2: PLAN TORQUE -->
+                    <a href="#" class="menu-item" onclick="alert('Módulo de Plan Torque y Procedimientos estará disponible próximamente.')">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-file-contract"></i>
+                        </div>
+                        <div class="text-box">
+                            <h3>Plan Torque y Procedimientos</h3>
+                            <p>Consulta de lineamientos y documentación operativa.</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <footer class="footer">
+                    <div class="logos-footer">
+                        <img src="Assets Index/Hochscild_logo3.png" alt="Hochschild" class="logo-footer-bottom">
+                        <img src="Assets Index/Torque SC.png" alt="Torque" class="logo-footer-bottom">
+                    </div>
+                    <div class="footer-text">HOCHSCHILD MINING • 2026</div>
+                </footer>
             </div>
-            <div class="text-box">
-                <h3>Capacitaciones</h3>
-                <p>Registro y seguimiento de formación del personal.</p>
-            </div>
-        </a>
+        </div>
     </div>
 </div>
 
-<footer class="footer">
-    <div class="logos-footer">
-        <img src="Assets Index/Hochscild_logo3.png" alt="Hochschild" class="logo-footer-bottom">
-        <img src="Assets Index/Torque SC.png" alt="Torque" class="logo-footer-bottom">
-    </div>
-    <div class="footer-text">HOCHSCHILD MINING • 2026</div>
-</footer>
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+</script>
 
 </body>
 </html>
