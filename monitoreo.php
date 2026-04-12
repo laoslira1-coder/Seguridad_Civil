@@ -175,6 +175,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         }
         .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
+        .radar-photo {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--g);
+            flex-shrink: 0;
+        }
+
         /* ─── SEARCH SECTION ─── */
         .search-section {
             background: var(--surf);
@@ -776,7 +784,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                 <td><strong style="color:var(--ink);">${row.fecha_fmt}</strong><div class="td-meta">${row.hora_fmt}</div></td>
                                 <td><span class="badge-mov ${badge}">${row.tipo_movimiento}</span></td>
                                 <td><span class="badge-placa">${row.placa_unidad}</span><div class="td-meta">${row.v_marca || '-'}</div></td>
-                                <td><strong style="font-size:13px;">${row.nombre_conductor}</strong><div class="td-meta">DNI: ${row.dni_conductor}</div></td>
+                                <td><div style="display:flex; align-items:center; gap:8px;"><img src="fotos_personal/${row.dni_conductor}.jpg" alt="" class="radar-photo" onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='fotos_personal/${row.dni_conductor}.JPG';}else{this.style.display='none';}"><div><strong style="font-size:13px;">${row.nombre_conductor}</strong><div class="td-meta">DNI: ${row.dni_conductor}</div></div></div></td>
                                 <td><strong>${row.empresa}</strong><div class="td-meta"><i class="fa-solid fa-location-dot" style="color:var(--g);"></i> ${row.destino || '-'}</div></td>
                                 <td><span style="font-size:12px; color:var(--ink4); font-weight:500;">${row.autorizado_por || '-'}</span></td>
                                 <td><span style="font-weight:700; color:var(--ink); font-size:12px;"><i class="fa-solid fa-user-check" style="color:var(--g); margin-right:4px;"></i>${row.operador_garita}</span></td>

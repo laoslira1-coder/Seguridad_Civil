@@ -338,6 +338,15 @@ $res_hist = mysqli_query($conn, $sql_hist);
             height: 3px;
             background: var(--g-grad);
         }
+        .card-photo {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--g);
+            box-shadow: 0 2px 12px rgba(0,0,0,.3);
+            margin: 0 auto 10px;
+            display: block;
+        }
         .card-header h2 {
             margin: 0;
             color: var(--surf);
@@ -524,12 +533,19 @@ $res_hist = mysqli_query($conn, $sql_hist);
         /* ═══ HISTORY ═══ */
         .history-box { display: flex; flex-direction: column; gap: 8px; }
 
+        .h-photo {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--g);
+            flex-shrink: 0;
+        }
         .history-item {
             background: var(--surf);
             padding: 14px 16px;
             border-radius: var(--r-lg);
             display: flex;
-            justify-content: space-between;
+            gap: 10px;
             align-items: center;
             border: 1px solid rgba(0,0,0,.07);
             box-shadow: 0 1px 4px rgba(0,0,0,.03);
@@ -763,6 +779,15 @@ $res_hist = mysqli_query($conn, $sql_hist);
         <div class="result-card">
             <div class="card-header">
                 <?php if ($persona): ?>
+                    <?php
+                    $foto_dni = $persona['dni'];
+                    $foto_path = null;
+                    foreach (['jpg','JPG','jpeg','JPEG','png','PNG'] as $ext) {
+                        if (file_exists("fotos_personal/{$foto_dni}.{$ext}")) { $foto_path = "fotos_personal/{$foto_dni}.{$ext}"; break; }
+                    }
+                    if ($foto_path): ?>
+                        <img src="<?php echo $foto_path; ?>" alt="Foto" class="card-photo">
+                    <?php endif; ?>
                     <h2><?php echo explode(" ", $persona['nombres'])[0] . " " . explode(" ", $persona['apellidos'])[0]; ?></h2>
                     <p><?php echo $persona['empresa']; ?> | DNI: <?php echo $persona['dni']; ?></p>
 
@@ -852,7 +877,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
             $is_out = ($row['tipo_movimiento'] == 'SALIDA');
             $data_json = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
         ?>
+            <?php
+                $h_foto = null;
+                foreach (['jpg','JPG','jpeg','JPEG','png','PNG'] as $ext) {
+                    if (file_exists("fotos_personal/{$row['dni_conductor']}.{$ext}")) { $h_foto = "fotos_personal/{$row['dni_conductor']}.{$ext}"; break; }
+                }
+            ?>
             <div class="history-item <?php echo $is_out?'item-out':'item-in'; ?>" onclick="showHistoryDetails('<?php echo $data_json; ?>')">
+                <?php if ($h_foto): ?>
+                    <img src="<?php echo $h_foto; ?>" alt="" class="h-photo">
+                <?php endif; ?>
                 <div style="flex:1;">
                     <div class="h-name">
                         <?php if($is_out): ?>

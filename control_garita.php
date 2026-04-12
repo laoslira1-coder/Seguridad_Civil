@@ -448,6 +448,21 @@ $res_hist = mysqli_query($conn, $sql_hist);
         }
         .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
+        .conductor-photo {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--g);
+            box-shadow: 0 2px 12px rgba(0,0,0,.15);
+        }
+        .h-photo-sm {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--g);
+            flex-shrink: 0;
+        }
+
         /* ===== LAYOUT ===== */
         .container {
             max-width: 1040px;
@@ -818,7 +833,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             border-radius: 4px var(--radius-lg) var(--radius-lg) 4px;
             padding: 16px 20px;
             display: flex;
-            justify-content: space-between;
+            gap: 10px;
             align-items: center;
             cursor: pointer;
             transition: all .25s var(--ease);
@@ -1451,6 +1466,11 @@ $res_hist = mysqli_query($conn, $sql_hist);
                         <input type="hidden" name="tipo_personal_new" id="main_type" value="PERMANENTE">
                     </div>
 
+                    <!-- FOTO CONDUCTOR -->
+                    <div id="fotoConductorBox" class="hidden" style="text-align:center; margin-bottom:12px;">
+                        <img id="fotoConductor" src="" alt="Foto" class="conductor-photo">
+                    </div>
+
                     <!-- NOMBRE BLOQUEADO, LOS DEMÁS SIEMPRE EDITABLES -->
                     <label>NOMBRE COMPLETO (CONDUCTOR)</label>
                     <input type="text" name="nom_c" id="final_nom_c" required readonly style="background:#e2e8f0;">
@@ -1614,7 +1634,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
             ];
             $json = htmlspecialchars(json_encode($modalData), ENT_QUOTES, 'UTF-8');
         ?>
+            <?php
+                $h_foto_g = null;
+                foreach (['jpg','JPG','jpeg','JPEG','png','PNG'] as $ext) {
+                    if (file_exists("fotos_personal/{$dni_c}.{$ext}")) { $h_foto_g = "fotos_personal/{$dni_c}.{$ext}"; break; }
+                }
+            ?>
             <div class="history-item <?php echo ($v_mov=='SALIDA' || $v_mov=='RECHAZADO')?'item-out':''; ?>" onclick="showHistoryDetails('<?php echo $json; ?>')">
+                <?php if ($h_foto_g): ?>
+                    <img src="<?php echo $h_foto_g; ?>" alt="" class="h-photo-sm">
+                <?php endif; ?>
                 <div>
                     <div class="h-placa"><?php echo $v_placa; ?> <span style="font-size:10px; color:#64748b; font-weight:400;">(<?php echo explode(' ', $conductor)[0]; ?>)</span></div>
                     <div style="font-size:11px; color:#64748b; margin-top:2px;"><?php echo $row['empresa']; ?></div>
@@ -1809,7 +1838,20 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 let formNuevo = document.getElementById("formNuevoConductor");
                 let visFields = document.getElementById("visita-fields");
 
-                if(data.success) { 
+                // Foto del conductor
+                var fotoBox = document.getElementById("fotoConductorBox");
+                var fotoImg = document.getElementById("fotoConductor");
+                var testImg = new Image();
+                testImg.onload = function() { fotoImg.src = this.src; fotoBox.classList.remove("hidden"); };
+                testImg.onerror = function() {
+                    var testJpg = new Image();
+                    testJpg.onload = function() { fotoImg.src = this.src; fotoBox.classList.remove("hidden"); };
+                    testJpg.onerror = function() { fotoBox.classList.add("hidden"); };
+                    testJpg.src = "fotos_personal/" + dni + ".JPG";
+                };
+                testImg.src = "fotos_personal/" + dni + ".jpg";
+
+                if(data.success) {
                     document.getElementById("es_nuevo_c").value = "0";
                     formNuevo.classList.add("hidden");
                     iptNom.value = data.nombre || "SIN NOMBRE"; 
