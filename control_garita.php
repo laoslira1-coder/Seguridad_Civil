@@ -328,6 +328,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             --gl: #FBF6E8;
             --gr: rgba(196,154,44,.15);
             --g-grad: linear-gradient(135deg,#7A5A0E,#C49A2C,#E8C85A);
+            --g-glow: 0 0 20px rgba(196,154,44,.18);
             --ink: #0A0A0A;
             --ink2: #1A1A1A;
             --ink3: #3A3A3A;
@@ -339,11 +340,25 @@ $res_hist = mysqli_query($conn, $sql_hist);
             --b: rgba(0,0,0,.08);
             --b-gold: rgba(196,154,44,.3);
             --red: #DC2626;
+            --red-bg: #FEF2F2;
             --green: #16A34A;
+            --green-bg: #F0FDF4;
             --font: 'Inter', system-ui, sans-serif;
             --mono: 'JetBrains Mono', monospace;
             --h-gold: #C49A2C;
             --h-dark: #0A0A0A;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-2xl: 24px;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.06), 0 12px 28px rgba(0,0,0,.05);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,.08), 0 24px 48px rgba(0,0,0,.06);
+            --shadow-xl: 0 16px 48px rgba(0,0,0,.12), 0 32px 80px rgba(0,0,0,.08);
+            --ease: cubic-bezier(.4,0,.2,1);
+            --ease-bounce: cubic-bezier(.34,1.56,.64,1);
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -351,17 +366,21 @@ $res_hist = mysqli_query($conn, $sql_hist);
         body {
             font-family: var(--font);
             background-color: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(196,154,44,.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(196,154,44,.03) 0%, transparent 50%);
             margin: 0;
             padding-bottom: 80px;
             color: var(--ink);
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* ===== TOPBAR ===== */
         .header-main {
-            background: rgba(255,255,255,.82);
-            backdrop-filter: blur(20px) saturate(1.8);
-            -webkit-backdrop-filter: blur(20px) saturate(1.8);
+            background: rgba(255,255,255,.72);
+            backdrop-filter: blur(24px) saturate(1.9);
+            -webkit-backdrop-filter: blur(24px) saturate(1.9);
             padding: 0 24px;
             display: flex;
             justify-content: center;
@@ -371,7 +390,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             top: 0;
             z-index: 1000;
             height: 64px;
-            box-shadow: 0 1px 0 var(--b);
+            box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.03);
         }
         .header-main::after {
             content: '';
@@ -379,8 +398,9 @@ $res_hist = mysqli_query($conn, $sql_hist);
             bottom: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: var(--g-grad);
+            opacity: .85;
         }
         .nav-left {
             position: absolute;
@@ -390,38 +410,54 @@ $res_hist = mysqli_query($conn, $sql_hist);
             gap: 12px;
         }
         .logo-container { display: flex; gap: 14px; align-items: center; }
-        .logo-header { height: 40px; transition: transform 0.3s; }
-        .logo-header:hover { transform: scale(1.05); }
+        .logo-header { height: 40px; transition: transform 0.3s var(--ease); filter: drop-shadow(0 1px 2px rgba(0,0,0,.08)); }
+        .logo-header:hover { transform: scale(1.06) translateY(-1px); }
         .btn-back {
             color: var(--ink);
-            font-size: 18px;
+            font-size: 17px;
             text-decoration: none;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
-            transition: background .2s;
+            border-radius: var(--radius-md);
+            transition: all .25s var(--ease);
+            background: transparent;
+            border: 1px solid transparent;
         }
-        .btn-back:hover { background: var(--gr); }
+        .btn-back:hover {
+            background: var(--gl);
+            border-color: var(--b-gold);
+            color: var(--gd);
+            box-shadow: var(--g-glow);
+        }
         .nav-left a[href="reporte_excel.php"] {
             background: var(--ink) !important;
-            color: var(--surf) !important;
-            padding: 7px 14px !important;
-            border-radius: 10px !important;
+            color: var(--g) !important;
+            padding: 8px 16px !important;
+            border-radius: var(--radius-md) !important;
             font-size: 11px !important;
             font-weight: 700 !important;
-            letter-spacing: .5px;
-            transition: opacity .2s;
+            letter-spacing: .8px;
+            transition: all .25s var(--ease);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.15);
         }
-        .nav-left a[href="reporte_excel.php"]:hover { opacity: .85; }
+        .nav-left a[href="reporte_excel.php"]:hover {
+            opacity: .9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,.2);
+        }
 
         /* ===== LAYOUT ===== */
         .container {
-            max-width: 1020px;
-            margin: 28px auto;
-            padding: 0 16px;
+            max-width: 1040px;
+            margin: 32px auto;
+            padding: 0 20px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
@@ -430,7 +466,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             .container {
                 grid-template-columns: 1fr;
                 gap: 20px;
-                margin-top: 16px;
+                margin-top: 20px;
             }
             .card { margin-bottom: 0; }
         }
@@ -438,44 +474,70 @@ $res_hist = mysqli_query($conn, $sql_hist);
         /* ===== CARDS ===== */
         .card {
             background: var(--surf);
-            padding: 24px;
-            border-radius: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04);
-            border: 1px solid rgba(0,0,0,.07);
+            background-image:
+                radial-gradient(ellipse at 0% 0%, rgba(196,154,44,.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(196,154,44,.02) 0%, transparent 50%);
+            padding: 28px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(0,0,0,.06);
             position: relative;
+            transition: box-shadow .3s var(--ease), transform .3s var(--ease);
         }
         .card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: 24px;
-            right: 24px;
-            height: 2px;
+            left: 28px;
+            right: 28px;
+            height: 3px;
             background: var(--g-grad);
-            border-radius: 0 0 2px 2px;
+            border-radius: 0 0 3px 3px;
+            opacity: .7;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-xl);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(0,0,0,.02);
+            pointer-events: none;
         }
         .card-header {
             border-bottom: 1px solid var(--b);
-            padding-bottom: 14px;
+            padding-bottom: 16px;
             margin-bottom: 24px;
+            position: relative;
         }
-        .card-green { border-color: rgba(22,163,74,.25) !important; }
-        .card-green::before { background: linear-gradient(135deg, #16A34A, #4ADE80) !important; }
-        .card-red { border-color: rgba(220,38,38,.2) !important; }
-        .card-red::before { background: linear-gradient(135deg, #DC2626, #F87171) !important; }
-        .card-blue { border-color: rgba(37,99,235,.2) !important; }
-        .card-blue::before { background: linear-gradient(135deg, #2563EB, #60A5FA) !important; }
+        .card-green { border-color: rgba(22,163,74,.2) !important; }
+        .card-green::before { background: linear-gradient(135deg, #16A34A, #4ADE80) !important; opacity: 1 !important; }
+        .card-red { border-color: rgba(220,38,38,.15) !important; }
+        .card-red::before { background: linear-gradient(135deg, #DC2626, #F87171) !important; opacity: 1 !important; }
+        .card-blue { border-color: rgba(37,99,235,.15) !important; }
+        .card-blue::before { background: linear-gradient(135deg, #2563EB, #60A5FA) !important; opacity: 1 !important; }
 
         /* ===== TYPOGRAPHY ===== */
         h2 {
             margin: 0;
             color: var(--ink);
-            font-size: 13px;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 700;
+            letter-spacing: 1.8px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        h2 i { color: var(--g); margin-right: 6px; }
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 16px;
+            background: var(--g-grad);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        h2 i { color: var(--g); margin-right: 4px; font-size: 14px; }
         label {
             display: block;
             font-size: 9px;
@@ -498,9 +560,9 @@ $res_hist = mysqli_query($conn, $sql_hist);
         /* ===== INPUTS ===== */
         input, select, textarea {
             width: 100%;
-            padding: 13px 14px;
-            border: 1px solid var(--b);
-            border-radius: 12px;
+            padding: 13px 16px;
+            border: 1.5px solid rgba(0,0,0,.1);
+            border-radius: var(--radius-md);
             font-size: 14px;
             box-sizing: border-box;
             margin-bottom: 14px;
@@ -508,15 +570,23 @@ $res_hist = mysqli_query($conn, $sql_hist);
             color: var(--ink2);
             background: var(--bg);
             font-family: var(--font);
-            transition: border-color .2s, box-shadow .2s, background .2s;
+            transition: border-color .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease), transform .15s var(--ease);
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--g);
             background: var(--surf);
-            box-shadow: 0 0 0 3px var(--gr);
+            box-shadow: 0 0 0 4px rgba(196,154,44,.12), 0 2px 8px rgba(196,154,44,.08);
+            transform: translateY(-1px);
         }
-        select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C49A2C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
         textarea { resize: vertical; min-height: 60px; }
 
         /* ===== ALERT INPUTS ===== */
@@ -525,32 +595,40 @@ $res_hist = mysqli_query($conn, $sql_hist);
             color: #991b1b !important;
             border: 2px solid var(--red) !important;
             font-weight: 800 !important;
-            box-shadow: 0 0 0 3px rgba(220,38,38,.15) !important;
+            box-shadow: 0 0 0 4px rgba(220,38,38,.1) !important;
             animation: pulse-red 2s infinite;
         }
         .input-alert::placeholder { color: #991b1b !important; opacity: 0.6; }
         @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(220,38,38,.5); }
-            70% { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+            0% { box-shadow: 0 0 0 0 rgba(220,38,38,.45); }
+            70% { box-shadow: 0 0 0 10px rgba(220,38,38,0); }
             100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
         }
 
-        /* ===== PLACA INPUT ===== */
+        /* ===== PLACA INPUT — HERO ===== */
         #inputPlaca {
-            font-size: 26px;
+            font-size: 28px;
             text-align: center;
-            letter-spacing: 4px;
+            letter-spacing: 6px;
             text-transform: uppercase;
             font-family: var(--mono);
             font-weight: 700;
-            border: 2px solid var(--ink);
-            background: var(--surf);
-            border-radius: 14px;
-            padding: 16px;
+            border: 2.5px solid var(--ink);
+            background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
+            border-radius: var(--radius-lg);
+            padding: 18px 16px;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+            position: relative;
+        }
+        #inputPlaca::placeholder {
+            letter-spacing: 3px;
+            color: #c0c0c0;
+            font-weight: 500;
         }
         #inputPlaca:focus {
             border-color: var(--g);
-            box-shadow: 0 0 0 3px var(--gr);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.04), 0 0 0 4px rgba(196,154,44,.15), 0 0 24px rgba(196,154,44,.08);
+            transform: translateY(-1px);
         }
 
         /* ===== BUTTONS ===== */
@@ -558,18 +636,32 @@ $res_hist = mysqli_query($conn, $sql_hist);
             background: var(--ink);
             color: var(--g);
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-weight: 700;
             cursor: pointer;
             font-size: 13px;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             font-family: var(--font);
-            transition: opacity .2s, transform .1s;
+            transition: all .25s var(--ease);
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            position: relative;
+            overflow: hidden;
         }
-        .btn-search:hover { opacity: .9; }
-        .btn-search:active { transform: scale(.98); }
+        .btn-search::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .btn-search:hover {
+            opacity: .92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,.25);
+        }
+        .btn-search:active { transform: translateY(0) scale(.99); }
 
         .btn-register {
             background: var(--ink);
@@ -577,119 +669,240 @@ $res_hist = mysqli_query($conn, $sql_hist);
             width: 100%;
             padding: 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-weight: 700;
             cursor: pointer;
             font-size: 14px;
             margin-top: 10px;
             font-family: var(--font);
             letter-spacing: .5px;
-            transition: opacity .2s, transform .1s;
+            transition: all .25s var(--ease);
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            position: relative;
+            overflow: hidden;
         }
-        .btn-register:hover { opacity: .9; }
-        .btn-register:active { transform: scale(.98); }
-        .btn-register.btn-out { background: var(--red); }
+        .btn-register::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .btn-register:hover {
+            opacity: .92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,.25);
+        }
+        .btn-register:active { transform: translateY(0) scale(.99); }
+        .btn-register.btn-out { background: var(--red); box-shadow: 0 2px 8px rgba(220,38,38,.3); }
+        .btn-register.btn-out:hover { box-shadow: 0 4px 16px rgba(220,38,38,.35); }
 
         .btn-save-new {
             font-family: var(--font);
-            transition: opacity .2s, transform .1s;
+            transition: all .25s var(--ease);
+            box-shadow: 0 2px 8px rgba(37,99,235,.25);
         }
-        .btn-save-new:hover { opacity: .9; }
-        .btn-save-new:active { transform: scale(.98); }
+        .btn-save-new:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,.3); }
+        .btn-save-new:active { transform: translateY(0) scale(.99); }
 
         /* ===== GRID DATOS ===== */
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .dato-input {
             background: var(--surf) !important;
-            border: 1px solid var(--b) !important;
+            border: 1.5px solid rgba(0,0,0,.08) !important;
             color: var(--ink);
             font-weight: 600;
             padding: 12px;
             font-size: 13px;
+            transition: all .25s var(--ease);
         }
         .dato-input:focus {
             border-color: var(--g) !important;
-            box-shadow: 0 0 0 3px var(--gr);
+            box-shadow: 0 0 0 4px rgba(196,154,44,.1);
+            transform: translateY(-1px);
         }
         .full-width { grid-column: span 2; }
         .input-comp {
             width: 100%;
             padding: 11px 12px;
-            border: 1px solid var(--b);
-            border-radius: 12px;
+            border: 1.5px solid rgba(0,0,0,.08);
+            border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 600;
             color: var(--ink2);
             background: var(--bg);
             font-family: var(--font);
-            transition: border-color .2s, box-shadow .2s;
+            transition: all .25s var(--ease);
         }
         .input-comp:focus {
             outline: none;
             border-color: var(--g);
-            box-shadow: 0 0 0 3px var(--gr);
+            box-shadow: 0 0 0 4px rgba(196,154,44,.1);
+            transform: translateY(-1px);
         }
 
         /* ===== SWITCH BOX ===== */
         .switch-box {
             background: var(--bg);
-            padding: 4px;
-            border-radius: 14px;
+            padding: 5px;
+            border-radius: var(--radius-lg);
             display: flex;
             gap: 4px;
             margin-bottom: 20px;
-            border: 1px solid var(--b);
+            border: 1.5px solid rgba(0,0,0,.08);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.04);
         }
         .switch-option {
             flex: 1;
-            padding: 11px;
+            padding: 12px;
             text-align: center;
             font-weight: 700;
             cursor: pointer;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: .5px;
+            letter-spacing: .8px;
             color: var(--ink5);
-            transition: all .2s;
+            transition: all .25s var(--ease);
+            position: relative;
         }
-        .switch-option:hover { color: var(--ink3); }
-        .switch-option.active-in { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(22,163,74,.25); }
-        .switch-option.active-out { background: var(--red); color: white; box-shadow: 0 2px 8px rgba(220,38,38,.25); }
+        .switch-option:hover { color: var(--ink3); background: rgba(0,0,0,.03); }
+        .switch-option.active-in {
+            background: var(--green);
+            color: white;
+            box-shadow: 0 2px 12px rgba(22,163,74,.35), inset 0 1px 0 rgba(255,255,255,.2);
+            text-shadow: 0 1px 2px rgba(0,0,0,.15);
+        }
+        .switch-option.active-out {
+            background: var(--red);
+            color: white;
+            box-shadow: 0 2px 12px rgba(220,38,38,.35), inset 0 1px 0 rgba(255,255,255,.2);
+            text-shadow: 0 1px 2px rgba(0,0,0,.15);
+        }
 
         /* ===== HISTORY ===== */
         .history-container {
-            padding-left: 20px;
-            border-left: 2px solid var(--b);
+            padding-left: 0;
+            border-left: none;
             grid-column: span 2;
-            margin-top: 20px;
+            margin-top: 24px;
         }
-        @media (max-width: 768px) { .history-container { padding-left: 0; border-left: none; } }
+        .history-container > h3 {
+            font-size: 11px !important;
+            color: var(--ink4) !important;
+            margin-bottom: 20px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 2px !important;
+            font-weight: 800 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 16px !important;
+        }
+        .history-container > h3::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 14px;
+            background: var(--g-grad);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .history-container > h3::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--b), transparent);
+        }
+
         .history-item {
             background: var(--surf);
             border: 1px solid rgba(0,0,0,.06);
-            box-shadow: 0 1px 3px rgba(0,0,0,.03);
-            margin-bottom: 12px;
-            border-radius: 14px;
-            padding: 14px 16px;
+            border-left: 4px solid var(--green);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 10px;
+            border-radius: 4px var(--radius-lg) var(--radius-lg) 4px;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: box-shadow .2s, transform .15s;
+            transition: all .25s var(--ease);
+            position: relative;
+        }
+        .history-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+            pointer-events: none;
         }
         .history-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,.07);
-            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            background: var(--green-bg);
         }
-        .history-item.item-out { border-left: 3px solid var(--red); }
-        .h-placa { font-family: var(--mono); font-weight: 700; font-size: 14px; color: var(--ink); }
+        .history-item.item-out {
+            border-left: 4px solid var(--red);
+        }
+        .history-item.item-out:hover {
+            background: var(--red-bg);
+        }
+
+        /* Badge overrides for IN/OUT pills */
+        .history-item > div:last-child > span[style*="background:#dcfce7"],
+        .history-item > div:last-child > span[style*="background:#fee2e2"] {
+            display: inline-block !important;
+            padding: 5px 12px !important;
+            border-radius: 20px !important;
+            font-size: 10px !important;
+            font-weight: 800 !important;
+            letter-spacing: 1px !important;
+            min-width: 44px !important;
+            text-align: center !important;
+        }
+        .history-item:not(.item-out) > div:last-child > span[style*="background:#dcfce7"] {
+            background: var(--green) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(22,163,74,.3) !important;
+        }
+        .history-item.item-out > div:last-child > span[style*="background:#fee2e2"] {
+            background: var(--red) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(220,38,38,.3) !important;
+        }
+
+        .h-placa {
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--bg);
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,.06);
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        /* History time styling */
+        .history-item > div:last-child > div[style*="font-family:'Orbitron'"] {
+            font-family: var(--mono) !important;
+            font-weight: 600 !important;
+            font-size: 11px !important;
+            color: var(--ink4) !important;
+            letter-spacing: .5px;
+        }
 
         /* ===== HIDDEN ===== */
         .hidden { display: none; }
 
         /* ===== SWEETALERT ===== */
-        .swal2-popup { font-family: var(--font) !important; border-radius: 24px !important; }
+        .swal2-popup {
+            font-family: var(--font) !important;
+            border-radius: var(--radius-2xl) !important;
+            box-shadow: var(--shadow-xl) !important;
+        }
 
         /* ===== MODALS ===== */
         .modal-overlay {
@@ -697,21 +910,21 @@ $res_hist = mysqli_query($conn, $sql_hist);
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,.6);
+            background: rgba(0,0,0,.55);
             z-index: 9999;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px) saturate(1.4);
+            -webkit-backdrop-filter: blur(12px) saturate(1.4);
         }
         .modal-card {
             background: var(--surf);
-            padding: 28px;
-            border-radius: 24px;
+            padding: 32px;
+            border-radius: var(--radius-2xl);
             width: 88%;
             max-width: 420px;
-            box-shadow: 0 24px 80px rgba(0,0,0,.25);
-            animation: popIn 0.25s cubic-bezier(.34,1.56,.64,1);
+            box-shadow: var(--shadow-xl);
+            animation: popIn 0.3s var(--ease-bounce);
             position: relative;
             overflow: hidden;
         }
@@ -721,10 +934,21 @@ $res_hist = mysqli_query($conn, $sql_hist);
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 4px;
             background: var(--g-grad);
         }
-        @keyframes popIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-2xl);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+            pointer-events: none;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.9) translateY(12px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
 
         /* ===== TYPE TABS ===== */
         .type-tabs {
@@ -733,88 +957,160 @@ $res_hist = mysqli_query($conn, $sql_hist);
             margin-bottom: 15px;
             background: var(--bg);
             padding: 4px;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.04);
         }
         .type-tab {
             flex: 1;
             text-align: center;
             padding: 10px;
-            border-radius: 9px;
+            border-radius: var(--radius-sm);
             font-weight: 700;
             font-size: 11px;
             cursor: pointer;
             color: var(--ink5);
             letter-spacing: .5px;
-            transition: all .2s;
+            transition: all .25s var(--ease);
         }
-        .type-tab.active-perm { background: var(--ink); color: white; }
-        .type-tab.active-visita { background: #D97706; color: white; }
+        .type-tab:hover { background: rgba(0,0,0,.04); color: var(--ink3); }
+        .type-tab.active-perm {
+            background: var(--ink);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+        .type-tab.active-visita {
+            background: #D97706;
+            color: white;
+            box-shadow: 0 2px 8px rgba(217,119,6,.3), inset 0 1px 0 rgba(255,255,255,.15);
+        }
 
         /* ===== COMPANION ROW ===== */
-        .companion-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .companion-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+            padding: 4px 0;
+            transition: all .2s var(--ease);
+        }
+        .companion-row:hover {
+            background: rgba(196,154,44,.03);
+            border-radius: var(--radius-md);
+            padding: 4px 8px;
+            margin-left: -8px;
+            margin-right: -8px;
+        }
 
         /* ===== MINI BUTTONS ===== */
         .btn-mini {
             height: 46px;
             width: 46px;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: opacity .2s, transform .1s;
+            transition: all .25s var(--ease);
         }
-        .btn-mini:hover { opacity: .85; }
-        .btn-mini:active { transform: scale(.92); }
-        .btn-scan { background: var(--ink); color: var(--g); }
-        .btn-buscar-mini { background: var(--bg); color: var(--ink3); border: 1px solid var(--b); }
+        .btn-mini:hover {
+            opacity: .88;
+            transform: translateY(-1px);
+        }
+        .btn-mini:active { transform: translateY(0) scale(.94); }
+        .btn-scan {
+            background: var(--ink);
+            color: var(--g);
+            box-shadow: 0 2px 6px rgba(0,0,0,.15);
+        }
+        .btn-scan:hover { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+        .btn-buscar-mini {
+            background: var(--surf);
+            color: var(--ink3);
+            border: 1.5px solid rgba(0,0,0,.1);
+            box-shadow: var(--shadow-xs);
+        }
+        .btn-buscar-mini:hover {
+            border-color: var(--b-gold);
+            background: var(--gl);
+            color: var(--gd);
+        }
 
         /* ===== JEFE OPTION ===== */
         .jefe-option {
-            border: 1px solid var(--b);
-            border-radius: 14px;
-            padding: 14px 16px;
+            border: 1.5px solid rgba(0,0,0,.08);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
             margin-bottom: 10px;
             cursor: pointer;
-            transition: all .25s;
+            transition: all .3s var(--ease);
             display: flex;
             align-items: center;
             gap: 14px;
             background: var(--surf);
+            position: relative;
+            overflow: hidden;
         }
-        .jefe-option:hover { border-color: var(--b-gold); background: var(--gl); }
+        .jefe-option::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            color: var(--g);
+            font-size: 14px;
+            opacity: 0;
+            transition: all .3s var(--ease-bounce);
+        }
+        .jefe-option:hover {
+            border-color: var(--b-gold);
+            background: var(--gl);
+            box-shadow: 0 2px 8px rgba(196,154,44,.08);
+        }
         .jefe-option.selected {
             border-color: var(--g);
             background: var(--gl);
-            box-shadow: 0 0 0 3px var(--gr);
+            box-shadow: 0 0 0 4px rgba(196,154,44,.1), 0 2px 12px rgba(196,154,44,.12);
+        }
+        .jefe-option.selected::after {
+            transform: translateY(-50%) scale(1);
+            opacity: 1;
         }
         .jefe-icon {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             background: var(--bg);
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--ink3);
             font-size: 17px;
-            transition: all .25s;
+            transition: all .3s var(--ease);
+            flex-shrink: 0;
         }
-        .jefe-option.selected .jefe-icon { background: var(--g); color: white; }
+        .jefe-option.selected .jefe-icon {
+            background: var(--g-grad);
+            color: white;
+            box-shadow: 0 2px 8px rgba(196,154,44,.3);
+        }
         .jefe-info h4 { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .5px; }
         .jefe-info p { margin: 3px 0 0; font-size: 10px; color: var(--ink5); font-weight: 500; }
 
         /* ===== DETAILS MODAL ROWS ===== */
         .details-row {
-            padding: 8px 0;
+            padding: 10px 0;
             border-bottom: 1px solid rgba(0,0,0,.04);
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.6;
+            transition: background .2s var(--ease);
         }
         .details-row:last-child { border-bottom: none; }
+        .details-row:hover { background: rgba(196,154,44,.02); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 6px; }
         .details-label {
             display: block;
             font-size: 9px;
@@ -822,17 +1118,65 @@ $res_hist = mysqli_query($conn, $sql_hist);
             color: var(--ink5);
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
+        /* ===== PHASE 3 PREMIUM HEADER ===== */
+        .card > div[style*="background:var(--h-dark)"] {
+            background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%) !important;
+            position: relative;
+        }
+        .card > div[style*="background:var(--h-dark)"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--g-grad);
+        }
+
+        /* Phase 3 final register button glow */
+        .btn-register[name="btn_registrar_conductor"],
+        button[name="btn_registrar_conductor"] {
+            background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%) !important;
+            box-shadow: 0 4px 0 #000, 0 6px 20px rgba(0,0,0,.25), 0 0 30px rgba(196,154,44,.08) !important;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .btn-register[name="btn_registrar_conductor"]:hover,
+        button[name="btn_registrar_conductor"]:hover {
+            box-shadow: 0 4px 0 #000, 0 8px 24px rgba(0,0,0,.3), 0 0 40px rgba(196,154,44,.15) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.25); }
+
         /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .history-container { padding-left: 0; border-left: none; }
+        }
         @media (max-width: 480px) {
             .header-main { height: 56px; padding: 0 12px; }
             .logo-header { height: 32px; }
             .nav-left { left: 10px; gap: 8px; }
-            .container { padding: 0 10px; }
-            .card { padding: 18px; border-radius: 16px; }
-            #inputPlaca { font-size: 22px; letter-spacing: 3px; }
+            .container { padding: 0 12px; }
+            .card { padding: 20px; border-radius: var(--radius-lg); }
+            .card::before { left: 20px; right: 20px; }
+            #inputPlaca { font-size: 22px; letter-spacing: 4px; padding: 16px 12px; }
+            .history-item { padding: 14px 16px; }
+            .jefe-option { padding: 14px; }
+            .modal-card { padding: 24px; width: 92%; }
+        }
+
+        /* ===== SELECTION HIGHLIGHT ===== */
+        ::selection {
+            background: rgba(196,154,44,.2);
+            color: var(--ink);
         }
     </style>
 </head>
@@ -889,14 +1233,14 @@ $res_hist = mysqli_query($conn, $sql_hist);
 
 <nav class="header-main">
     <div class="nav-left">
-        <a href="control_garita_principal.php" class="btn-back"><i class="fa-solid fa-chevron-left"></i></a>
-        <a href="reporte_excel.php" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-file-excel"></i> DATA
+        <a href="control_garita_principal.php" class="btn-back" title="Regresar"><i class="fa-solid fa-chevron-left"></i></a>
+        <a href="reporte_excel.php" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:7px;">
+            <i class="fa-solid fa-table-columns"></i> DATA
         </a>
     </div>
     <div class="logo-container">
-        <img src="Assets Index/logo.png" class="logo-header">
-        <img src="Assets Index/seguridadcivil.png" class="logo-header">
+        <img src="Assets Index/logo.png" class="logo-header" alt="Logo">
+        <img src="Assets Index/seguridadcivil.png" class="logo-header" alt="Seguridad Civil">
     </div>
 </nav>
 
