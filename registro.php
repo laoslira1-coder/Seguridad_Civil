@@ -1,15 +1,12 @@
 <?php
 // 1. CONEXIÓN A BASE DE DATOS
-session_start();
 require_once 'config.php';
-require_once 'security.php';
-$conexion = $conn;
+$conexion = $conn; // Alias para compatibilidad con el resto del archivo
 
 $mensaje = "";
 
 // 2. LÓGICA DE REGISTRO BLINDADA
 if (isset($_POST['registrar'])) {
-    csrf_validate();
     // Captura de datos (Ya no necesitamos escape manual aquí)
     $nombre_real    = $_POST['nombre_real'];
     $usuario_nuevo  = $_POST['usuario'];
@@ -56,7 +53,6 @@ if (isset($_POST['registrar'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro | Seguridad Civil</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -231,7 +227,6 @@ if (isset($_POST['registrar'])) {
     <?php echo $mensaje; ?>
 
     <form method="POST" action="">
-        <?php echo csrf_field(); ?>
         <div class="input-group">
             <i class="fa-solid fa-id-card icon-left"></i>
             <input type="text" name="nombre_real" placeholder="Nombre Completo (Ej: Juan Perez)" required>

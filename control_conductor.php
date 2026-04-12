@@ -5,7 +5,11 @@
 ob_start(); 
 session_start();
 
-// 1. CONEXIÓN
+// 1. CONFIGURACIÓN DE ERRORES (Silenciosos para no romper JSON)
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// 2. CONEXIÓN BLINDADA
 require_once 'config.php';
 // $conn ya está disponible desde config.php con charset utf8
 date_default_timezone_set('America/Lima');
@@ -31,34 +35,39 @@ $tipo_mensaje = "";
 // 0. AJAX: CREACIÓN RÁPIDA DE ACOMPAÑANTE (MODAL FANTASMA)
 // ---------------------------------------------------------
 if (isset($_POST['ajax_create_companion'])) {
-    ob_clean();
-    header('Content-Type: application/json');
+    ob_clean(); // Borrar cualquier alerta previa
+    header('Content-Type: application/json'); 
 
-    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni'] ?? '');
-    $nombre = strtoupper(trim($_POST['nombre'] ?? ''));
-    $empresa = strtoupper(trim($_POST['empresa'] ?? ''));
-    $tipo   = trim($_POST['tipo'] ?? 'VISITA');
+    $dni = mysqli_real_escape_string($conn, $_POST['dni']);
+    $nombre = strtoupper(mysqli_real_escape_string($conn, $_POST['nombre']));
+    $empresa = strtoupper(mysqli_real_escape_string($conn, $_POST['empresa']));
+    $tipo = mysqli_real_escape_string($conn, $_POST['tipo']); 
+    
+    // CORRECCIÓN: Buscamos por 'dni' en lugar de 'id' (porque 'id' podría no existir)
+    $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
+    
+    if(!$check) {
+        // Si falla la consulta, avisamos por qué
+        echo json_encode(['success' => false, 'msg' => 'Error al verificar DNI: ' . mysqli_error($conn)]);
+        exit;
+    }
 
-    $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
-    $stmt_chk->bind_param("s", $dni);
-    $stmt_chk->execute();
-    if ($stmt_chk->get_result()->num_rows > 0) {
+    if(mysqli_num_rows($check) > 0){
         echo json_encode(['success' => false, 'msg' => 'El DNI ya está registrado.']);
         exit;
     }
 
-    $cargo_vis = 'VISITANTE';
-    $stmt_ins = $conn->prepare(
-        "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
-         VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
-    );
-    $stmt_ins->bind_param("sssss", $dni, $nombre, $empresa, $tipo, $cargo_vis);
-    if ($stmt_ins->execute()) {
+    // INSERTAR
+    // Rellenamos apellidos con '-' y otros campos obligatorios con valores por defecto
+    $sql = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
+            VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', '-', 'VISITANTE', 'ACTIVO')";
+    
+    if(mysqli_query($conn, $sql)){
         echo json_encode(['success' => true, 'nombre_completo' => $nombre]);
     } else {
-        echo json_encode(['success' => false, 'msg' => 'Error al guardar.']);
+        echo json_encode(['success' => false, 'msg' => 'Error al guardar: ' . mysqli_error($conn)]);
     }
-    exit;
+    exit; // Fin del proceso AJAX
 }
 
 // ---------------------------------------------------------
@@ -75,14 +84,12 @@ if (isset($_SESSION['temp_msg'])) {
 // 2. BÚSQUEDA CONDUCTOR
 // ---------------------------------------------------------
 if (isset($_POST['dni_buscar'])) {
-    $busqueda = preg_replace('/[^0-9]/', '', $_POST['dni_buscar']);
-    $stmt_bus = $conn->prepare("SELECT * FROM fuerza_laboral WHERE dni = ? LIMIT 1");
-    $stmt_bus->bind_param("s", $busqueda);
-    $stmt_bus->execute();
-    $res = $stmt_bus->get_result();
+    $busqueda = mysqli_real_escape_string($conn, $_POST['dni_buscar']);
+    $sql = "SELECT * FROM fuerza_laboral WHERE dni = '$busqueda' LIMIT 1";
+    $res = mysqli_query($conn, $sql);
     
-    if ($res && $res->num_rows > 0) {
-        $persona = $res->fetch_assoc();
+    if ($res && mysqli_num_rows($res) > 0) {
+        $persona = mysqli_fetch_assoc($res);
     } else {
         $nuevo_dni = $busqueda;
         $mensaje = "DNI NO REGISTRADO. COMPLETE LOS DATOS.";
@@ -94,24 +101,18 @@ if (isset($_POST['dni_buscar'])) {
 // 3. REGISTRO (Conductor Nuevo o Existente)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar'])) {
-    $dni_c = preg_replace('/[^0-9]/', '', $_POST['dni_c']); 
-    $nom_c = strtoupper(trim($_POST['nom_c'])); 
-    $emp_c = strtoupper(trim($_POST['emp_c']));
+    $dni_c = $_POST['dni_c']; 
+    $nom_c = strtoupper($_POST['nom_c']); 
+    $emp_c = strtoupper($_POST['emp_c']);
     
     // Si es nuevo conductor, lo creamos primero
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = trim($_POST['tipo_personal_new']); 
-        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
-        $stmt_chk->bind_param("s", $dni_c);
-        $stmt_chk->execute();
-        if ($stmt_chk->get_result()->num_rows == 0) {
-            $cargo_cond = 'CONDUCTOR';
-            $apellido_def = '-';
-            $area_def = '-';
-            $estado_def = 'ACTIVO';
-            $stmt_new = $conn->prepare("INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_new->bind_param("ssssssss", $dni_c, $nom_c, $apellido_def, $emp_c, $tipo_p, $area_def, $cargo_cond, $estado_def);
-            $stmt_new->execute();
+        $tipo_p = $_POST['tipo_personal_new']; 
+        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni_c'");
+        if (mysqli_num_rows($check) == 0) {
+            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
+                        VALUES ('$dni_c', '$nom_c', '-', '$emp_c', '$tipo_p', '-', 'CONDUCTOR', 'ACTIVO')"; 
+            mysqli_query($conn, $sql_new);
         }
     }
 
@@ -122,20 +123,20 @@ if (isset($_POST['btn_registrar'])) {
     $anfitrion = isset($_POST['anfitrion']) ? strtoupper($_POST['anfitrion']) : '-';
     $motivo    = isset($_POST['motivo']) ? strtoupper($_POST['motivo']) : '-';
     
-    $tipo_mov = trim($_POST['tipo_movimiento']); 
+    $tipo_mov = $_POST['tipo_movimiento']; 
     $destino  = $_POST['destino'] ?: 'INTERIOR MINA'; 
     $op  = $_SESSION['usuario'];
 
-    $stmt_reg = $conn->prepare("INSERT INTO registros_garita (dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt_reg->bind_param("sssssssssssss", $dni_c, $nom_c, $emp_c, $tipo_mov, $destino, $ac1, $ac2, $ac3, $ac4, $obs, $anfitrion, $motivo, $op);
+    $sql_reg = "INSERT INTO registros_garita (dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso) 
+                VALUES ('$dni_c', '$nom_c', '$emp_c', '$tipo_mov', '$destino', '$ac1', '$ac2', '$ac3', '$ac4', '$obs', '$anfitrion', '$motivo', '$op', NOW())";
     
-    if ($stmt_reg->execute()) {
+    if (mysqli_query($conn, $sql_reg)) {
         $_SESSION['temp_msg'] = "REGISTRO EXITOSO: $nom_c ($tipo_mov)";
         $_SESSION['temp_type'] = "success";
         header("Location: control_conductor.php"); 
         exit();
     } else {
-        $mensaje = "Error al registrar movimiento. Intente nuevamente.";
+        $mensaje = "Error al registrar movimiento: " . mysqli_error($conn);
         $tipo_mensaje = "error";
     }
 }
@@ -152,7 +153,6 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITRAN | Control de Acceso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -293,45 +293,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<div class="app-layout">
-    
-    <!-- SIDEBAR -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
-            <h2 class="sidebar-title">SITRAN</h2>
-        </div>
-        <div class="sidebar-menu">
-            <div class="menu-label">Principal</div>
-            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
-            
-            <div class="menu-label" style="margin-top: 20px;">Operación</div>
-            <a href="control_garita_principal.php" class="sidebar-link active"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
-        </div>
-    </nav>
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<nav class="header-main">
+    <a href="control_garita_principal.php" style="color:#333; font-size:22px;"><i class="fa-solid fa-chevron-left"></i></a>
+    <div style="display:flex; gap:15px;">
+        <img src="Assets Index/logo.png" class="logo-header">
+        <img src="Assets Index/seguridadcivil.png" class="logo-header">
+    </div>
+    <div style="width:22px;"></div>
+</nav>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-        <!-- TOPBAR -->
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <a href="control_garita_principal.php" style="color:var(--text-primary);"><i class="fa-solid fa-chevron-left"></i></a>
-                    <span style="font-weight:700; font-size:14px; color:var(--text-primary);">CONDUCTORES DIRECTOS</span>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <a href="reporte_excel.php" target="_blank" style="background:var(--color-success); color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:700; font-size:11px; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-file-excel"></i> DATA
-                </a>
-            </div>
-        </header>
-
-        <div class="content-body">
-            <div class="container" style="max-width: 700px; margin: 0 auto; width:100%;">
+<div class="container">
     
     <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div> <?php endif; ?>
 
@@ -635,17 +606,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     }
 
     function closeDetails() { document.getElementById('details-modal').style.display = 'none'; }
-    
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebarOverlay').classList.toggle('active');
-    }
 </script>
-
-            </div> <!-- End container -->
-        </div> <!-- End content-body -->
-    </div> <!-- End main-content -->
-</div> <!-- End app-layout -->
 
 </body>
 </html>

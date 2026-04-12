@@ -1,32 +1,24 @@
 <?php
 // 1. LÓGICA DE CONEXIÓN Y SESIÓN
-session_start();
 require_once 'config.php';
-require_once 'security.php';
-$conexion = $conn;
+$conexion = $conn; // Alias para compatibilidad con el resto del archivo
 
 $mensaje = "";
 if (isset($_POST['ingresar'])) {
-    csrf_validate();
-
-    $usuario_ingresado = trim($_POST['usuario']);
+    $usuario_ingresado = $_POST['usuario'];
     $password_ingresada = $_POST['password'];
 
-    $stmt = $conexion->prepare("SELECT password FROM usuarios WHERE nombre_usuario = ? LIMIT 1");
-    $stmt->bind_param("s", $usuario_ingresado);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
+    $consulta = "SELECT * FROM usuarios WHERE nombre_usuario = '$usuario_ingresado' AND password = '$password_ingresada'";
+    $resultado = mysqli_query($conexion, $consulta);
 
-    if ($resultado->num_rows > 0) {
-        $fila = $resultado->fetch_assoc();
-        if ($password_ingresada === $fila['password'] || password_verify($password_ingresada, $fila['password'])) {
-            session_regenerate_id(true);
-            $_SESSION['usuario'] = $usuario_ingresado;
-            header("Location: panel.php");
-            exit();
-        }
+    if (mysqli_num_rows($resultado) > 0) {
+        session_start();
+        $_SESSION['usuario'] = $usuario_ingresado;
+        header("Location: panel.php");
+        exit();
+    } else {
+        $mensaje = "<div class='alert error'>❌ Credenciales incorrectas</div>";
     }
-    $mensaje = "<div class='alert error'>❌ Credenciales incorrectas</div>";
 }
 ?>
 
@@ -37,7 +29,6 @@ if (isset($_POST['ingresar'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso | Seguridad Civil</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
     
@@ -308,7 +299,6 @@ if (isset($_POST['ingresar'])) {
     <?php echo $mensaje; ?>
 
     <form method="POST" action="">
-        <?php echo csrf_field(); ?>
         <div class="input-group">
             <i class="fa-solid fa-user icon-left"></i>
             <input type="text" name="usuario" placeholder="Usuario Corporativo" required autocomplete="username">

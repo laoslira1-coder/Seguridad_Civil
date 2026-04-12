@@ -2,15 +2,17 @@
 ob_start();
 session_start();
 
-date_default_timezone_set('America/Lima');
-
-// Desactivar excepciones mysqli para compatibilidad con el manejo manual de errores
+// 1. CONFIGURACIÓN ROBUSTA
 $driver = new mysqli_driver();
-$driver->report_mode = MYSQLI_REPORT_OFF;
+$driver->report_mode = MYSQLI_REPORT_OFF; 
+ini_set('display_errors', 0); 
+error_reporting(E_ALL);
+
+date_default_timezone_set('America/Lima');
 
 // 2. CONEXIÓN
 require_once 'config.php';
-if (!$conn) { ob_clean(); http_response_code(503); die('Error de conexión a base de datos.'); }
+// \$conn disponible desde config.php
 // Validar Sesión
 if (!isset($_SESSION['usuario'])) { 
     if(isset($_POST['ajax_create_companion'])) { ob_clean(); echo json_encode(['success' => false, 'msg' => 'Sesión caducada.']); exit; }
@@ -31,35 +33,10 @@ $revisar_columnas = [
     'empresa_transporte' => "VARCHAR(100) DEFAULT '-'"
 ];
 foreach($revisar_columnas as $columna => $tipo) {
-    $chk = $conn->prepare("SHOW COLUMNS FROM vehiculos LIKE ?");
-    if ($chk) {
-        $chk->bind_param("s", $columna);
-        $chk->execute();
-        if($chk->get_result()->num_rows == 0) {
-            mysqli_query($conn, "ALTER TABLE vehiculos ADD `$columna` $tipo");
-        }
+    $chk = mysqli_query($conn, "SHOW COLUMNS FROM vehiculos LIKE '$columna'");
+    if($chk && mysqli_num_rows($chk) == 0) {
+        mysqli_query($conn, "ALTER TABLE vehiculos ADD $columna $tipo");
     }
-}
-
-// ==============================================================================
-// 0. AUTO-CREACIÓN DE TABLA JEFES Y AUTORIZADORES (Mejora Arquitectura)
-// ==============================================================================
-$chk_jefes = mysqli_query($conn, "SHOW TABLES LIKE 'jefes_turno'");
-if ($chk_jefes && mysqli_num_rows($chk_jefes) == 0) {
-    mysqli_query($conn, "CREATE TABLE jefes_turno (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        rol VARCHAR(50) NOT NULL,
-        cargo_desc VARCHAR(100) NOT NULL,
-        estado VARCHAR(20) DEFAULT 'ACTIVO'
-    )");
-    
-    // Insertar datos por defecto al crear la base de datos
-    mysqli_query($conn, "INSERT INTO jefes_turno (nombre, rol, cargo_desc) VALUES 
-        ('MANUEL ADRIAN PERALTA ESPINOZA', 'AUTORIZADOR', 'Autorizador de Ingreso'),
-        ('BENJAMIN MAMANI FLORES', 'AUTORIZADOR', 'Autorizador de Ingreso'),
-        ('JORGE TACO LLOSA', 'JEFE_TURNO', 'Jefe de Guardia'),
-        ('FREDY ACHIRCANA TORRES', 'JEFE_TURNO', 'Jefe de Guardia')");
 }
 // ==============================================================================
 
@@ -81,30 +58,29 @@ function formatDateForDB($dateStr) {
 // ---------------------------------------------------------
 if (isset($_POST['ajax_create_companion'])) {
     ob_clean();
-    header('Content-Type: application/json');
-
-    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni'] ?? '');
-    $nombre = strtoupper(trim($_POST['nombre'] ?? ''));
-    $empresa = strtoupper(trim($_POST['empresa'] ?? ''));
-    $cargo  = strtoupper(trim($_POST['cargo'] ?? 'VISITA'));
-    $tipo   = trim($_POST['tipo'] ?? 'VISITA');
-
-    $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
-    $stmt_chk->bind_param("s", $dni);
-    $stmt_chk->execute();
-    if ($stmt_chk->get_result()->num_rows > 0) {
+    header('Content-Type: application/json'); 
+    
+    $dni = mysqli_real_escape_string($conn, $_POST['dni']);
+    $nombre = strtoupper(mysqli_real_escape_string($conn, $_POST['nombre']));
+    $empresa = strtoupper(mysqli_real_escape_string($conn, $_POST['empresa']));
+    $cargo = strtoupper(mysqli_real_escape_string($conn, $_POST['cargo'])); 
+    $tipo = mysqli_real_escape_string($conn, $_POST['tipo']); 
+    
+    $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
+    if(mysqli_num_rows($check) > 0){
         echo json_encode(['success' => false, 'msg' => 'El DNI ya está registrado.']); exit;
     }
-
-    $stmt_ins = $conn->prepare(
-        "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
-         VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
-    );
-    $stmt_ins->bind_param("sssss", $dni, $nombre, $empresa, $tipo, $cargo);
-    if ($stmt_ins->execute()) {
-        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => $cargo, 'empresa' => $empresa]);
-    } else {
-        echo json_encode(['success' => false, 'msg' => 'Error al guardar.']);
+    
+    $sql = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
+            VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', '-', '$cargo', 'ACTIVO')";
+    
+    if(mysqli_query($conn, $sql)){ 
+        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => $cargo, 'empresa' => $empresa]); 
+    } else { 
+        // Fallback sin cargo si la columna falla
+        $sql_b = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, estado_validacion) VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo', 'ACTIVO')";
+        mysqli_query($conn, $sql_b);
+        echo json_encode(['success' => true, 'nombre_completo' => $nombre, 'cargo' => 'VISITA', 'empresa' => $empresa]); 
     }
     exit;
 }
@@ -127,22 +103,22 @@ $auto_auth   = isset($_GET['auth']) ? $_GET['auth'] : '';
 // LOGICA 1: CREAR VEHÍCULO NUEVO
 // ---------------------------------------------------------
 if (isset($_POST['btn_crear_vehiculo'])) {
-    $placa     = strtoupper(trim($_POST['new_placa']));
-    $remolque  = strtoupper(trim($_POST['new_remolque'] ?: '-'));
-    $tipo_veh  = strtoupper(trim($_POST['new_tipo']));
-    $marca     = strtoupper(trim($_POST['new_marca']));
-    $modelo    = strtoupper(trim($_POST['new_modelo']));
-    $color     = strtoupper(trim($_POST['new_color']));
-    $anio      = !empty($_POST['new_anio']) ? strtoupper(trim($_POST['new_anio'])) : '-'; 
-    $empresa   = strtoupper(trim($_POST['new_empresa']));
+    $placa     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_placa']));
+    $remolque  = strtoupper(mysqli_real_escape_string($conn, $_POST['new_remolque'] ?: '-'));
+    $tipo_veh  = strtoupper(mysqli_real_escape_string($conn, $_POST['new_tipo']));
+    $marca     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_marca']));
+    $modelo    = strtoupper(mysqli_real_escape_string($conn, $_POST['new_modelo']));
+    $color     = strtoupper(mysqli_real_escape_string($conn, $_POST['new_color']));
+    $anio      = !empty($_POST['new_anio']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['new_anio'])) : '-'; 
+    $empresa   = strtoupper(mysqli_real_escape_string($conn, $_POST['new_empresa']));
     
     // Traducimos el SOAT antes de guardar
-    $soat      = formatDateForDB($_POST['new_soat'] ?? '');
+    $soat      = mysqli_real_escape_string($conn, formatDateForDB($_POST['new_soat'] ?? ''));
     
-    $estado_auth = trim($_POST['passed_estado']); 
+    $estado_auth = mysqli_real_escape_string($conn, $_POST['passed_estado']); 
     // COMBINAR JEFE Y AUTORIZADO POR
-    $jefe_turno  = trim($_POST['passed_jefe']);
-    $solicita    = trim($_POST['selectAutoriza']);
+    $jefe_turno  = mysqli_real_escape_string($conn, $_POST['passed_jefe']);
+    $solicita    = mysqli_real_escape_string($conn, $_POST['selectAutoriza']);
     
     // Formato combinado: JEFE DE TURNO (Solic: QUIEN_SOLICITA)
     $autorizado_final = $jefe_turno;
@@ -152,41 +128,37 @@ if (isset($_POST['btn_crear_vehiculo'])) {
         $autorizado_final = !empty($jefe_turno) ? $jefe_turno : 'NO ESPECIFICADO';
     }
 
-    $movimiento  = trim($_POST['new_movimiento']); 
+    $movimiento  = mysqli_real_escape_string($conn, $_POST['new_movimiento']); 
     $operador    = $_SESSION['usuario'];
-    $obs_rechazo = isset($_POST['new_obs_rechazo']) ? strtoupper(trim($_POST['new_obs_rechazo'])) : '';
+    $obs_rechazo = isset($_POST['new_obs_rechazo']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['new_obs_rechazo'])) : '';
 
-    $stmt_chk = $conn->prepare("SELECT id FROM vehiculos WHERE placa = ?");
-    $stmt_chk->bind_param("s", $placa);
-    $stmt_chk->execute();
-    if ($stmt_chk->get_result()->num_rows > 0) {
+    $check = mysqli_query($conn, "SELECT id FROM vehiculos WHERE placa = '$placa'");
+    if (mysqli_num_rows($check) > 0) {
         $mensaje = "La placa ya existe."; $tipo_mensaje = "error";
     } else {
-        $stmt_ins = $conn->prepare("INSERT INTO vehiculos (placa, placa_remolque, tipo_vehiculo, marca, modelo, anio, color, empresa_transporte, soat_vcto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt_ins->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $marca, $modelo, $anio, $color, $empresa, $soat);
+        $sql_new = "INSERT INTO vehiculos (placa, placa_remolque, tipo_vehiculo, marca, modelo, anio, color, empresa_transporte, soat_vcto) 
+                    VALUES ('$placa', '$remolque', '$tipo_veh', '$marca', '$modelo', '$anio', '$color', '$empresa', '$soat')";
         
-        if (!$stmt_ins->execute()) {
-            $_SESSION['temp_msg'] = "Error al crear Vehículo en Base de Datos.";
+        // AHORA SI FALLA, TE AVISARÁ Y NO AVANZARÁ
+        if (!mysqli_query($conn, $sql_new)) {
+            $_SESSION['temp_msg'] = "Error al crear Vehículo en Base de Datos: " . mysqli_error($conn);
             $_SESSION['temp_type'] = "error";
             header("Location: control_garita.php"); exit();
         }
         
         if ($estado_auth === 'AUTORIZADO') {
-            $destino_transito = 'EN TRANSITO';
-            $stmt_mov = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_mov->bind_param("ssssssss", $placa, $remolque, $tipo_veh, $empresa, $movimiento, $destino_transito, $autorizado_final, $operador);
-            $stmt_mov->execute();
+            $sql_mov = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) 
+                        VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', '$movimiento', 'EN TRANSITO', '$autorizado_final', '$operador')";
+            mysqli_query($conn, $sql_mov);
             
             $_SESSION['temp_msg'] = "VEHÍCULO REGISTRADO.";
             $_SESSION['temp_type'] = "success"; 
             header("Location: control_garita.php?fase=tripulacion&placa=" . urlencode($placa) . "&mov=" . urlencode($movimiento) . "&empresa=" . urlencode($empresa) . "&auth=" . urlencode($autorizado_final));
             exit();
         } else {
-            $denied_mov = 'DENEGADO';
-            $denied_dest = 'INGRESO RECHAZADO';
-            $stmt_mov = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_mov->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $empresa, $denied_mov, $denied_dest, $denied_mov, $operador, $obs_rechazo);
-            $stmt_mov->execute();
+            $sql_mov = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) 
+                        VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', 'DENEGADO', 'INGRESO RECHAZADO', 'DENEGADO', '$operador', '$obs_rechazo')";
+            mysqli_query($conn, $sql_mov);
 
             $_SESSION['temp_msg'] = "VEHÍCULO CREADO PERO DENEGADO.";
             $_SESSION['temp_type'] = "warning"; 
@@ -199,51 +171,52 @@ if (isset($_POST['btn_crear_vehiculo'])) {
 // LOGICA 2: REGISTRO/EDICION VEHÍCULO EXISTENTE
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar_vehiculo'])) {
-    $placa     = strtoupper(trim($_POST['placa_final']));
-    $remolque  = trim($_POST['remolque_final'] ?: '-');
-    $tipo_veh  = trim($_POST['tipo_final']);
-    $empresa   = trim($_POST['empresa_final']);
-    $marca_ed  = trim($_POST['marca_final']);
-    $modelo_ed = trim($_POST['modelo_final']);
-    $color_ed  = trim($_POST['color_final']);
-    $anio_ed   = !empty($_POST['anio_final']) ? trim($_POST['anio_final']) : '-'; 
+    $placa     = strtoupper(mysqli_real_escape_string($conn, $_POST['placa_final']));
+    $remolque  = mysqli_real_escape_string($conn, $_POST['remolque_final'] ?: '-');
+    $tipo_veh  = mysqli_real_escape_string($conn, $_POST['tipo_final']);
+    $empresa   = mysqli_real_escape_string($conn, $_POST['empresa_final']);
+    $marca_ed  = mysqli_real_escape_string($conn, $_POST['marca_final']);
+    $modelo_ed = mysqli_real_escape_string($conn, $_POST['modelo_final']);
+    $color_ed  = mysqli_real_escape_string($conn, $_POST['color_final']);
+    $anio_ed   = !empty($_POST['anio_final']) ? mysqli_real_escape_string($conn, $_POST['anio_final']) : '-'; 
     
     // Traducimos el SOAT editado
-    $soat_ed   = formatDateForDB($_POST['soat_final']);
+    $soat_ed   = mysqli_real_escape_string($conn, formatDateForDB($_POST['soat_final']));
     
-    $autoriza   = trim($_POST['jefe_autoriza_final']); 
-    $movimiento = trim($_POST['tipo_movimiento']);
+    $autoriza   = mysqli_real_escape_string($conn, $_POST['jefe_autoriza_final']); 
+    $movimiento = mysqli_real_escape_string($conn, $_POST['tipo_movimiento']);
     $operador   = $_SESSION['usuario'];
     $es_rechazo = ($_POST['estado_validacion_final'] === 'NO AUTORIZADO');
-    $obs_rech   = isset($_POST['obs_rechazo_final']) ? strtoupper(trim($_POST['obs_rechazo_final'])) : '';
+    $obs_rech   = isset($_POST['obs_rechazo_final']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['obs_rechazo_final'])) : '';
     
-    // Limpiamos la placa para asegurar que coincida con la Base de Datos
+    // Limpiamos la placa para asegurar que coincida con la Base de Datos aunque le hayan puesto un guion
     $placa_limpia = preg_replace('/[^A-Z0-9]/', '', $placa);
     
-    // UPDATE BLINDADO con Prepared Statements
-    $stmt_upd = $conn->prepare("UPDATE vehiculos SET tipo_vehiculo=?, marca=?, modelo=?, color=?, anio=?, empresa_transporte=?, placa_remolque=?, soat_vcto=? WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '')=?");
-    $stmt_upd->bind_param("sssssssss", $tipo_veh, $marca_ed, $modelo_ed, $color_ed, $anio_ed, $empresa, $remolque, $soat_ed, $placa_limpia);
+    // UPDATE BLINDADO (Actualizará todo permanentemente)
+    $sql_upd = "UPDATE vehiculos SET 
+                tipo_vehiculo='$tipo_veh', marca='$marca_ed', modelo='$modelo_ed', 
+                color='$color_ed', anio='$anio_ed', empresa_transporte='$empresa', 
+                placa_remolque='$remolque', soat_vcto='$soat_ed' 
+                WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '')='$placa_limpia'";
     
-    if (!$stmt_upd->execute()) {
-        $_SESSION['temp_msg'] = "Error al guardar cambios del Vehículo.";
+    // AHORA SI FALLA AL GUARDAR, TE AVISARÁ Y SE DETENDRÁ
+    if (!mysqli_query($conn, $sql_upd)) {
+        $_SESSION['temp_msg'] = "Error al guardar cambios del Vehículo: " . mysqli_error($conn);
         $_SESSION['temp_type'] = "error";
         header("Location: control_garita.php"); exit();
     }
 
     if ($es_rechazo) {
-        $denied_mov = 'DENEGADO';
-        $denied_dest = 'INGRESO RECHAZADO';
-        $stmt_rch = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt_rch->bind_param("sssssssss", $placa, $remolque, $tipo_veh, $empresa, $denied_mov, $denied_dest, $denied_mov, $operador, $obs_rech);
-        $stmt_rch->execute();
+        $sql = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita, observaciones) 
+                VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', 'DENEGADO', 'INGRESO RECHAZADO', 'DENEGADO', '$operador', '$obs_rech')";
+        mysqli_query($conn, $sql);
         $_SESSION['temp_msg'] = "ACCESO DENEGADO REGISTRADO.";
         $_SESSION['temp_type'] = "warning";
         header("Location: control_garita.php"); exit();
     } else {
-        $destino_transito = 'EN TRANSITO';
-        $stmt_ok = $conn->prepare("INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt_ok->bind_param("ssssssss", $placa, $remolque, $tipo_veh, $empresa, $movimiento, $destino_transito, $autoriza, $operador);
-        $stmt_ok->execute();
+        $sql = "INSERT INTO registros_vehiculos (placa_unidad, placa_remolque, tipo_vehiculo, empresa, tipo_movimiento, destino, autorizado_por, operador_garita) 
+                VALUES ('$placa', '$remolque', '$tipo_veh', '$empresa', '$movimiento', 'EN TRANSITO', '$autoriza', '$operador')";
+        mysqli_query($conn, $sql);
         
         $_SESSION['temp_msg'] = "VEHÍCULO OK. PASE A PERSONAL.";
         $_SESSION['temp_type'] = "success";
@@ -256,79 +229,76 @@ if (isset($_POST['btn_registrar_vehiculo'])) {
 // LOGICA 3: REGISTRO FINAL (PERSONAL)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar_conductor'])) {
-    $dni_c = preg_replace('/[^0-9]/', '', $_POST['dni_c']); 
-    $nom_c = strtoupper(trim($_POST['nom_c'])); 
+    $dni_c = mysqli_real_escape_string($conn, $_POST['dni_c']); 
+    $nom_c = strtoupper(mysqli_real_escape_string($conn, $_POST['nom_c'])); 
     
     // Capturamos los datos editables (Empresa, Área y Cargo)
-    $emp_c = strtoupper(trim($_POST['emp_c']));
-    $area_c = isset($_POST['area_c']) ? strtoupper(trim($_POST['area_c'])) : '-';
-    $cargo_c = isset($_POST['cargo_c']) ? strtoupper(trim($_POST['cargo_c'])) : 'VISITA';
+    $emp_c = strtoupper(mysqli_real_escape_string($conn, $_POST['emp_c']));
+    $area_c = isset($_POST['area_c']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['area_c'])) : '-';
+    $cargo_c = isset($_POST['cargo_c']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['cargo_c'])) : 'VISITA';
     
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = trim($_POST['tipo_personal_new']); 
-        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
-        $stmt_chk->bind_param("s", $dni_c);
-        $stmt_chk->execute();
-        if ($stmt_chk->get_result()->num_rows == 0) {
-            $apellido_def = '-';
-            $estado_def = 'ACTIVO';
-            $stmt_new = $conn->prepare("INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_new->bind_param("ssssssss", $dni_c, $nom_c, $apellido_def, $emp_c, $tipo_p, $area_c, $cargo_c, $estado_def);
-            $stmt_new->execute();
+        $tipo_p = mysqli_real_escape_string($conn, $_POST['tipo_personal_new']); 
+        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni_c'");
+        if (mysqli_num_rows($check) == 0) {
+            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
+                        VALUES ('$dni_c', '$nom_c', '-', '$emp_c', '$tipo_p', '$area_c', '$cargo_c', 'ACTIVO')"; 
+            mysqli_query($conn, $sql_new);
         }
     } else {
         // ACTUALIZACIÓN DE DATOS LABORALES SI EL USUARIO LOS MODIFICÓ EN PANTALLA
-        $stmt_upd_p = $conn->prepare("UPDATE fuerza_laboral SET empresa=?, area=?, cargo=? WHERE dni=?");
-        $stmt_upd_p->bind_param("ssss", $emp_c, $area_c, $cargo_c, $dni_c);
-        $stmt_upd_p->execute();
+        $sql_upd_p = "UPDATE fuerza_laboral SET empresa='$emp_c', area='$area_c', cargo='$cargo_c' WHERE dni='$dni_c'";
+        mysqli_query($conn, $sql_upd_p);
     }
 
-    $lic_nro = strtoupper(trim($_POST['lic_nro']));
-    $lic_cat = strtoupper(trim($_POST['lic_cat_mtc']));
+    $lic_nro = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_nro']));
+    $lic_cat = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_cat_mtc']));
     
     // Traducimos las Fechas de la Licencia
-    $lic_f_exp = formatDateForDB($_POST['f_expedicion']);
-    $lic_f_rev = formatDateForDB($_POST['f_revalidacion']);
+    $lic_f_exp = mysqli_real_escape_string($conn, formatDateForDB($_POST['f_expedicion']));
+    $lic_f_rev = mysqli_real_escape_string($conn, formatDateForDB($_POST['f_revalidacion']));
     
-    $lic_res = strtoupper(trim($_POST['lic_restricciones']));
-    $lic_gs = strtoupper(trim($_POST['lic_gs']));
-    $lic_cat_mina = strtoupper(trim($_POST['lic_cat_mina']));
+    $lic_res = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_restricciones']));
+    $lic_gs = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_gs']));
+    $lic_cat_mina = strtoupper(mysqli_real_escape_string($conn, $_POST['lic_cat_mina']));
 
-    $stmt_lic = $conn->prepare("INSERT INTO detalles_conductor (dni, nro_licencia, categoria_mtc, f_expedicion, f_revalidacion, restricciones, grupo_sanguineo, categoria_mina) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE nro_licencia=VALUES(nro_licencia), categoria_mtc=VALUES(categoria_mtc), f_expedicion=VALUES(f_expedicion), f_revalidacion=VALUES(f_revalidacion), restricciones=VALUES(restricciones), grupo_sanguineo=VALUES(grupo_sanguineo), categoria_mina=VALUES(categoria_mina)");
-    $stmt_lic->bind_param("ssssssss", $dni_c, $lic_nro, $lic_cat, $lic_f_exp, $lic_f_rev, $lic_res, $lic_gs, $lic_cat_mina);
-    $stmt_lic->execute();
+    $sql_lic = "INSERT INTO detalles_conductor (dni, nro_licencia, categoria_mtc, f_expedicion, f_revalidacion, restricciones, grupo_sanguineo, categoria_mina) 
+                VALUES ('$dni_c', '$lic_nro', '$lic_cat', '$lic_f_exp', '$lic_f_rev', '$lic_res', '$lic_gs', '$lic_cat_mina')
+                ON DUPLICATE KEY UPDATE 
+                nro_licencia='$lic_nro', categoria_mtc='$lic_cat', f_expedicion='$lic_f_exp', f_revalidacion='$lic_f_rev', restricciones='$lic_res', grupo_sanguineo='$lic_gs', categoria_mina='$lic_cat_mina'";
+    mysqli_query($conn, $sql_lic);
 
     // Acompañantes
-    $ac1 = $_POST['ac1'] ?: 'NINGUNO'; 
-    $ac2 = $_POST['ac2'] ?: 'NINGUNO';
-    $ac3 = $_POST['ac3'] ?: 'NINGUNO'; 
-    $ac4 = $_POST['ac4'] ?: 'NINGUNO';
+    $ac1 = mysqli_real_escape_string($conn, $_POST['ac1'] ?: 'NINGUNO'); 
+    $ac2 = mysqli_real_escape_string($conn, $_POST['ac2'] ?: 'NINGUNO');
+    $ac3 = mysqli_real_escape_string($conn, $_POST['ac3'] ?: 'NINGUNO'); 
+    $ac4 = mysqli_real_escape_string($conn, $_POST['ac4'] ?: 'NINGUNO');
     
     // DATOS DE ORIGEN Y DESTINO
-    $origen_ui = isset($_POST['origen_ui']) ? strtoupper(trim($_POST['origen_ui'])) : 'NO ESPECIFICADO';
-    $destino_ui = isset($_POST['destino_ui']) ? strtoupper(trim($_POST['destino_ui'])) : 'NO ESPECIFICADO';
+    $origen_ui = isset($_POST['origen_ui']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['origen_ui'])) : 'NO ESPECIFICADO';
+    $destino_ui = isset($_POST['destino_ui']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['destino_ui'])) : 'NO ESPECIFICADO';
     
-    $obs_raw = $_POST['obs'] ?: '';
+    $obs_raw = mysqli_real_escape_string($conn, $_POST['obs'] ?: '');
     $obs_final = "ORIGEN: " . $origen_ui . ". " . $obs_raw;
 
-    $anfitrion = isset($_POST['anfitrion']) ? strtoupper(trim($_POST['anfitrion'])) : '-';
-    $motivo    = isset($_POST['motivo']) ? strtoupper(trim($_POST['motivo'])) : '-';
-    $tipo_mov  = trim($_POST['mov_vehiculo']);
+    $anfitrion = isset($_POST['anfitrion']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['anfitrion'])) : '-';
+    $motivo    = isset($_POST['motivo']) ? strtoupper(mysqli_real_escape_string($conn, $_POST['motivo'])) : '-';
+    $tipo_mov  = mysqli_real_escape_string($conn, $_POST['mov_vehiculo']);
     
-    $placa_veh = trim($_POST['placa_vehiculo']);
-    $autorizado_por = trim($_POST['auth_vehiculo']); 
+    $placa_veh = mysqli_real_escape_string($conn, $_POST['placa_vehiculo']);
+    $autorizado_por = mysqli_real_escape_string($conn, $_POST['auth_vehiculo']); 
     $op        = $_SESSION['usuario'];
 
-    $stmt_reg = $conn->prepare("INSERT INTO registros_garita (placa_unidad, dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso, autorizado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-    $stmt_reg->bind_param("sssssssssssssss", $placa_veh, $dni_c, $nom_c, $emp_c, $tipo_mov, $destino_ui, $ac1, $ac2, $ac3, $ac4, $obs_final, $anfitrion, $motivo, $op, $autorizado_por);
+    $sql_reg = "INSERT INTO registros_garita (placa_unidad, dni_conductor, nombre_conductor, empresa, tipo_movimiento, destino, acompanante_1, acompanante_2, acompanante_3, acompanante_4, observaciones, anfitrion, motivo, operador_garita, fecha_ingreso, autorizado_por) 
+                VALUES ('$placa_veh', '$dni_c', '$nom_c', '$emp_c', '$tipo_mov', '$destino_ui', '$ac1', '$ac2', '$ac3', '$ac4', '$obs_final', '$anfitrion', '$motivo', '$op', NOW(), '$autorizado_por')";
     
-    if ($stmt_reg->execute()) {
+    if (mysqli_query($conn, $sql_reg)) {
         $_SESSION['temp_msg'] = "REGISTRO COMPLETADO.";
         $_SESSION['temp_type'] = "success";
         header("Location: control_garita.php"); 
         exit();
     } else {
-        $mensaje = "Error al guardar. Intente nuevamente."; $tipo_mensaje = "error";
+        $mensaje = "Error al guardar: " . mysqli_error($conn); $tipo_mensaje = "error";
     }
 }
 
@@ -344,7 +314,6 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SITRAN | Control Integral</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -422,7 +391,6 @@ $res_hist = mysqli_query($conn, $sql_hist);
         .btn-register { background: linear-gradient(135deg, #166534 0%, #14532d 100%); color: white; width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 16px; margin-top: 10px; }
         .btn-register.btn-out { background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%); }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 600px) { .grid-datos { grid-template-columns: 1fr; } }
         .dato-input { background: white !important; border: 1px solid #cbd5e1 !important; color: var(--h-dark); font-weight: 700; padding: 12px; font-size: 14px; }
         .full-width { grid-column: span 2; }
         .history-container { padding-left: 20px; border-left: 2px solid #e2e8f0; grid-column: span 2; margin-top: 20px; }
@@ -508,59 +476,32 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<div class="app-layout">
-    
-    <!-- SIDEBAR -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
-            <h2 class="sidebar-title">SITRAN</h2>
-        </div>
-        <div class="sidebar-menu">
-            <div class="menu-label">Principal</div>
-            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
-            
-            <div class="menu-label" style="margin-top: 20px;">Operación</div>
-            <a href="control_garita_principal.php" class="sidebar-link active"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
-        </div>
-    </nav>
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<nav class="header-main">
+    <div class="nav-left">
+        <a href="control_garita_principal.php" class="btn-back"><i class="fa-solid fa-chevron-left"></i></a>
+        <a href="reporte_excel.php" target="_blank" style="background:#166534; color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-file-excel"></i> DATA
+        </a>
+    </div>
+    <div class="logo-container">
+        <img src="Assets Index/logo.png" class="logo-header">
+        <img src="Assets Index/seguridadcivil.png" class="logo-header">
+    </div>
+</nav>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-        <!-- TOPBAR -->
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <a href="control_garita_principal.php" style="color:var(--text-primary);"><i class="fa-solid fa-chevron-left"></i></a>
-                    <span style="font-weight:700; font-size:14px; color:var(--text-primary);">GARITA</span>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <a href="reporte_excel.php" target="_blank" style="background:var(--color-success); color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:700; font-size:11px; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-file-excel"></i> DATA
-                </a>
-            </div>
-        </header>
-
-        <div class="content-body">
-            <div class="container">
+<div class="container">
     
     <?php if ($fase_actual !== 'tripulacion'): ?>
     
     <!-- FASE 1: VALIDACIÓN -->
-    <div class="glass-card" id="cardValidacion" style="margin-bottom: 20px; align-self: start;">
+    <div class="card" id="cardValidacion">
         <div class="card-header"><h2><i class="fa-solid fa-shield-halved"></i> 1. Validación Previa</h2></div>
         <form method="POST" id="formMain">
-            <div class="floating-group">
-                <input type="text" id="inputPlaca" class="floating-input" placeholder=" " maxlength="10" autocomplete="off" style="font-size: 24px; text-align: center; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; text-transform: uppercase;">
-                <label class="floating-label">PLACA UNIDAD</label>
-            </div>
+            <label>Placa Unidad</label>
+            <input type="text" id="inputPlaca" placeholder="ABC-123" maxlength="10">
 
             <label>Estado de Autorización</label>
-            <select id="selectEstado" class="input-comp" onchange="toggleJefe()" style="margin-bottom: 20px;">
+            <select id="selectEstado" onchange="toggleJefe()">
                 <option value="">-- SELECCIONE --</option>
                 <option value="AUTORIZADO">AUTORIZADO (Ingreso/Salida)</option>
                 <option value="NO AUTORIZADO">NO AUTORIZADO (Registrar Rechazo)</option>
@@ -570,28 +511,27 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <label style="color:#c5a059;">Autorizado Por:</label>
                 <select id="selectAutoriza" name="selectAutoriza" style="margin-bottom: 20px;">
                     <option value="">-- SELECCIONE AUTORIZADOR --</option>
-                    <?php
-                    $res_aut = mysqli_query($conn, "SELECT nombre FROM jefes_turno WHERE rol='AUTORIZADOR' AND estado='ACTIVO'");
-                    while($row_a = mysqli_fetch_assoc($res_aut)):
-                    ?>
-                        <option value="<?= htmlspecialchars($row_a['nombre']) ?>"><?= htmlspecialchars($row_a['nombre']) ?></option>
-                    <?php endwhile; ?>
+                    <option value="MANUEL ADRIAN PERALTA ESPINOZA">MANUEL ADRIAN PERALTA ESPINOZA</option>
+                    <option value="BENJAMIN MAMANI FLORES">BENJAMIN MAMANI FLORES</option>
                 </select>
 
                 <label style="color:#c5a059; margin-bottom:10px;">Jefe de Seguridad en Turno:</label>
                 
-                <?php
-                $res_jefes = mysqli_query($conn, "SELECT nombre, cargo_desc FROM jefes_turno WHERE rol='JEFE_TURNO' AND estado='ACTIVO'");
-                while($row_j = mysqli_fetch_assoc($res_jefes)):
-                ?>
-                <div class="jefe-option" onclick="selectJefe(this, '<?= htmlspecialchars($row_j['nombre']) ?>')">
+                <div class="jefe-option" onclick="selectJefe(this, 'JORGE TACO LLOSA')">
                     <div class="jefe-icon"><i class="fa-solid fa-user-shield"></i></div>
                     <div class="jefe-info">
-                        <h4><?= htmlspecialchars($row_j['nombre']) ?></h4>
-                        <p><?= htmlspecialchars($row_j['cargo_desc']) ?></p>
+                        <h4>JORGE TACO LLOSA</h4>
+                        <p>Jefe de Guardia</p>
                     </div>
                 </div>
-                <?php endwhile; ?>
+
+                <div class="jefe-option" onclick="selectJefe(this, 'FREDY ACHIRCANA TORRES')">
+                    <div class="jefe-icon"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="jefe-info">
+                        <h4>FREDY ACHIRCANA TORRES</h4>
+                        <p>Jefe de Guardia</p>
+                    </div>
+                </div>
                 
                 <input type="hidden" name="passed_jefe" id="inputJefeHidden">
             </div>
@@ -603,7 +543,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 
     <!-- FASE 2: FICHA TÉCNICA -->
-    <div class="glass-card" id="cardResultado" style="display:none; margin-bottom: 20px; align-self: start;">
+    <div class="card" id="cardResultado" style="display:none;">
         <div class="card-header" id="headerResultado"><h2><i class="fa-solid fa-truck-front"></i> 2. Ficha Técnica</h2></div>
 
         <div id="estadoEspera" style="text-align:center; padding:40px; color:#cbd5e1;">
@@ -680,17 +620,17 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <label>Placa Unidad</label>
                 <input type="text" name="new_placa" id="new_placa" readonly style="background:#e2e8f0; color:#64748b;">
                 
-                <div class="grid-datos">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div><label>Tipo</label><input type="text" name="new_tipo" required></div>
                     <div><label>Remolque</label><input type="text" name="new_remolque"></div>
                 </div>
 
-                <div class="grid-datos">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div><label>Marca</label><input type="text" name="new_marca" required></div>
                     <div><label>Modelo</label><input type="text" name="new_modelo" required></div>
                 </div>
 
-                <div class="grid-datos">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div><label>Color</label><input type="text" name="new_color" required></div>
                     <div>
                         <label>Año (Min: 2023)</label>
@@ -880,14 +820,13 @@ $res_hist = mysqli_query($conn, $sql_hist);
             $v_mov = $row['tipo_movimiento'];
             $dni_c = $row['dni_conductor'];
             
-            // Obtenemos detalles extra del conductor (Prepared Statement)
-            $stmt_det = $conn->prepare("SELECT f.area, f.cargo, d.nro_licencia, d.categoria_mtc, d.f_expedicion, d.f_revalidacion, d.restricciones, d.grupo_sanguineo, d.categoria_mina 
+            // Obtenemos detalles extra del conductor
+            $sql_det = "SELECT f.area, f.cargo, d.nro_licencia, d.categoria_mtc, d.f_expedicion, d.f_revalidacion, d.restricciones, d.grupo_sanguineo, d.categoria_mina 
                         FROM fuerza_laboral f
                         LEFT JOIN detalles_conductor d ON f.dni = d.dni
-                        WHERE f.dni = ? LIMIT 1");
-            $stmt_det->bind_param("s", $dni_c);
-            $stmt_det->execute();
-            $row_d = $stmt_det->get_result()->fetch_assoc();
+                        WHERE f.dni = '$dni_c' LIMIT 1";
+            $res_det = mysqli_query($conn, $sql_det);
+            $row_d = mysqli_fetch_assoc($res_det);
 
             $conductor = $row['nombre_conductor'];
             $auth_final = $row['autorizado_por'];
@@ -1330,16 +1269,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
         if(estado == "") { Swal.fire('Atención', 'Seleccione un Estado', 'warning'); return; }
         if(estado == "AUTORIZADO" && (jefe == "" || autoriza == "")) { Swal.fire('Atención', 'Seleccione quién autoriza y el Jefe de Turno', 'warning'); return; }
 
-        let skeletonHTML = `
-        <div class="skeleton-loader">
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text short"></div>
-            <div class="skeleton skeleton-box" style="margin-top:10px;"></div>
-        </div>
-        <div style="text-align:center; margin-top:10px; color:var(--text-muted); font-size:12px; font-weight:700;"><i class="fa-solid fa-circle-notch fa-spin"></i> CONSULTANDO FACTILIZA...</div>
-        `;
-        $("#estadoEspera").html(skeletonHTML);
+        $("#estadoEspera").html('<i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...');
         $("#fichaVehiculo").hide(); $("#formNuevoVehiculo").hide();
 
         $.ajax({
@@ -1495,17 +1425,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     }
 
     function closeDetails() { document.getElementById('details-modal').style.display = 'none'; }
-    
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebarOverlay').classList.toggle('active');
-    }
 </script>
-
-            </div> <!-- End container -->
-        </div> <!-- End content-body -->
-    </div> <!-- End main-content -->
-</div> <!-- End app-layout -->
 
 </body>
 </html>

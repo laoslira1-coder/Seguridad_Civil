@@ -5,6 +5,11 @@
 ob_start();
 session_start();
 
+// Configuración de errores (Esto evita la pantalla blanca y muestra el error real si ocurre)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 date_default_timezone_set('America/Lima');
 
 // 1. CONEXIÓN
@@ -22,14 +27,12 @@ $tipo_mensaje = "";
 // 2. BÚSQUEDA
 // ---------------------------------------------------------
 if (isset($_POST['dni_buscar'])) {
-    $busqueda = preg_replace('/[^0-9]/', '', $_POST['dni_buscar']);
-    $stmt_bus = $conn->prepare("SELECT * FROM fuerza_laboral WHERE dni = ? LIMIT 1");
-    $stmt_bus->bind_param("s", $busqueda);
-    $stmt_bus->execute();
-    $res = $stmt_bus->get_result();
-
-    if ($res->num_rows > 0) {
-        $persona = $res->fetch_assoc();
+    $busqueda = mysqli_real_escape_string($conn, $_POST['dni_buscar']);
+    $sql = "SELECT * FROM fuerza_laboral WHERE dni = '$busqueda' LIMIT 1";
+    $res = mysqli_query($conn, $sql);
+    
+    if ($res && mysqli_num_rows($res) > 0) {
+        $persona = mysqli_fetch_assoc($res);
     } else {
         $nuevo_dni = $busqueda;
     }
@@ -39,63 +42,54 @@ if (isset($_POST['dni_buscar'])) {
 // 3. REGISTRO (CORREGIDO: ELIMINADO num_acompanantes)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar'])) {
-    $dni    = preg_replace('/[^0-9]/', '', $_POST['dni_final']);
-    $nombre = strtoupper(trim($_POST['nombre_final']));
-    $empresa = strtoupper(trim($_POST['empresa_final']));
-
+    $dni = $_POST['dni_final']; 
+    $nombre = strtoupper($_POST['nombre_final']); 
+    $empresa = strtoupper($_POST['empresa_final']);
+    
     // Si es nuevo, insertamos en fuerza_laboral
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = trim($_POST['tipo_personal_new']);
-        $stmt_chk = $conn->prepare("SELECT dni FROM fuerza_laboral WHERE dni = ?");
-        $stmt_chk->bind_param("s", $dni);
-        $stmt_chk->execute();
-        if ($stmt_chk->get_result()->num_rows == 0) {
-            $cargo_peat = 'PEATON';
-            $stmt_new = $conn->prepare(
-                "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
-                 VALUES (?, ?, '-', ?, ?, '-', ?, 'ACTIVO')"
-            );
-            $stmt_new->bind_param("sssss", $dni, $nombre, $empresa, $tipo_p, $cargo_peat);
-            if (!$stmt_new->execute()) {
-                die("Error al crear personal.");
+        $tipo_p = $_POST['tipo_personal_new']; 
+        $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
+        if (mysqli_num_rows($check) == 0) {
+            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
+                        VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo_p', '-', 'PEATON', 'ACTIVO')"; 
+            if(!mysqli_query($conn, $sql_new)) {
+                die("Error al crear personal: " . mysqli_error($conn));
             }
         }
     }
 
-    $mov = trim($_POST['tipo_movimiento']);
-
+    $mov = $_POST['tipo_movimiento'];
+    
     if ($mov === 'SALIDA') {
-        $destino  = strtoupper(trim($_POST['destino_salida']));
-        $autoriza = trim($_POST['autoriza_salida']);
+        $destino = strtoupper($_POST['destino_salida']);
+        $autoriza = $_POST['autoriza_salida'];
     } else {
-        $destino  = 'INTERIOR MINA';
+        $destino = 'INTERIOR MINA';
         $autoriza = 'VERIFICADO EN GARITA';
     }
 
-    $anfitrion = strtoupper(trim($_POST['anfitrion'] ?? '-'));
-    $motivo    = strtoupper(trim($_POST['motivo'] ?? '-'));
-    $op        = $_SESSION['usuario'];
-    $ning      = 'NINGUNO';
+    $anfitrion = isset($_POST['anfitrion']) ? strtoupper($_POST['anfitrion']) : '-';
+    $motivo    = isset($_POST['motivo']) ? strtoupper($_POST['motivo']) : '-';
+    $op = $_SESSION['usuario'];
 
-    $stmt_reg = $conn->prepare(
-        "INSERT INTO registros_garita
-            (dni_conductor, nombre_conductor, empresa, tipo_movimiento,
-             destino, autorizado_por, anfitrion, motivo, operador_garita,
-             fecha_ingreso, acompanante_1, acompanante_2, acompanante_3, acompanante_4)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)"
-    );
-    $stmt_reg->bind_param(
-        "sssssssssssss",
-        $dni, $nombre, $empresa, $mov,
-        $destino, $autoriza, $anfitrion, $motivo, $op,
-        $ning, $ning, $ning, $ning
-    );
-
-    if ($stmt_reg->execute()) {
+    // SQL INSERT CORREGIDO (Quitamos num_acompanantes que causaba el error 500)
+    $sql_reg = "INSERT INTO registros_garita (
+                    dni_conductor, nombre_conductor, empresa, tipo_movimiento, 
+                    destino, autorizado_por, anfitrion, motivo, operador_garita, 
+                    fecha_ingreso, acompanante_1, acompanante_2, acompanante_3, acompanante_4
+                ) VALUES (
+                    '$dni', '$nombre', '$empresa', '$mov', 
+                    '$destino', '$autoriza', '$anfitrion', '$motivo', '$op', 
+                    NOW(), 'NINGUNO', 'NINGUNO', 'NINGUNO', 'NINGUNO'
+                )";
+    
+    if (mysqli_query($conn, $sql_reg)) {
         header("Location: control_personal.php?status=ok");
         exit();
     } else {
-        die("Error FATAL SQL: " . $stmt_reg->error);
+        // Si falla, mostramos el error en pantalla
+        die("Error FATAL SQL: " . mysqli_error($conn));
     }
 }
 
@@ -116,7 +110,6 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Personal | SITRAN</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -228,45 +221,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<div class="app-layout">
-    
-    <!-- SIDEBAR -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
-            <h2 class="sidebar-title">SITRAN</h2>
-        </div>
-        <div class="sidebar-menu">
-            <div class="menu-label">Principal</div>
-            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="monitoreo.php" class="sidebar-link"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
-            
-            <div class="menu-label" style="margin-top: 20px;">Operación</div>
-            <a href="control_garita_principal.php" class="sidebar-link active"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
-        </div>
-    </nav>
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<nav class="header-main">
+    <a href="control_garita_principal.php" style="color:#333; font-size:22px;"><i class="fa-solid fa-chevron-left"></i></a>
+    <div style="display:flex; gap:15px;">
+        <img src="Assets Index/logo.png" class="logo-header">
+        <img src="Assets Index/seguridadcivil.png" class="logo-header">
+    </div>
+    <div style="width:22px;"></div>
+</nav>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-        <!-- TOPBAR -->
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <a href="control_garita_principal.php" style="color:var(--text-primary);"><i class="fa-solid fa-chevron-left"></i></a>
-                    <span style="font-weight:700; font-size:14px; color:var(--text-primary);">CONTROL PERSONAL</span>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <a href="reporte_excel.php" target="_blank" style="background:var(--color-success); color:white; padding:8px 15px; border-radius:8px; text-decoration:none; font-weight:700; font-size:11px; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-file-excel"></i> DATA
-                </a>
-            </div>
-        </header>
-
-        <div class="content-body">
-            <div class="container" style="max-width: 600px; margin: 0 auto; width:100%;">
+<div class="container">
     
     <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div> <?php endif; ?>
 
@@ -500,17 +464,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             document.getElementById('formScan').submit();
         });
     }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebarOverlay').classList.toggle('active');
-    }
 </script>
-
-            </div> <!-- End container -->
-        </div> <!-- End content-body -->
-    </div> <!-- End main-content -->
-</div> <!-- End app-layout -->
 
 </body>
 </html>

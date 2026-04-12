@@ -12,22 +12,17 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
     // --- ACCIÓN: BUSCAR PERSONAL AUTÓNOMO (Base de Datos Maestra) ---
     if ($action == 'search_person') {
-        $q = trim($_GET['q'] ?? '');
+        $q = trim(mysqli_real_escape_string($conn, $_GET['q']));
         if (empty($q)) { echo json_encode(['error' => 'Ingrese un término']); exit; }
 
-        $q_like = '%' . $q . '%';
-        $stmt_sp = $conn->prepare(
-            "SELECT f.*, d.nro_licencia, d.categoria_mtc, d.f_revalidacion as d_vcto, d.categoria_mina
-             FROM fuerza_laboral f
-             LEFT JOIN detalles_conductor d ON f.dni = d.dni
-             WHERE f.dni = ? OR f.nombres LIKE ? OR f.apellidos LIKE ?
-             LIMIT 1"
-        );
-        $stmt_sp->bind_param("sss", $q, $q_like, $q_like);
-        $stmt_sp->execute();
-        $res_sp = $stmt_sp->get_result();
-        $person = $res_sp->fetch_assoc();
-
+        $sql = "SELECT f.*, d.nro_licencia, d.categoria_mtc, d.f_revalidacion as d_vcto, d.categoria_mina
+                FROM fuerza_laboral f
+                LEFT JOIN detalles_conductor d ON f.dni = d.dni
+                WHERE f.dni = '$q' OR f.nombres LIKE '%$q%' OR f.apellidos LIKE '%$q%'
+                LIMIT 1";
+        $res = mysqli_query($conn, $sql);
+        $person = mysqli_fetch_assoc($res);
+        
         if ($person) {
             echo json_encode(['success' => true, 'data' => $person]);
         } else {
@@ -37,61 +32,37 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     }
 
     // --- ACCIÓN: DASHBOARD Y RADAR (Movimientos) ---
-    $fecha_raw = $_GET['fecha'] ?? '';
-    $fecha = (!empty($fecha_raw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_raw)) ? $fecha_raw : date('Y-m-d');
-    $search_radar = trim($_GET['q'] ?? '');
+    $fecha = isset($_GET['fecha']) && !empty($_GET['fecha']) ? mysqli_real_escape_string($conn, $_GET['fecha']) : date('Y-m-d');
+    $search_radar = isset($_GET['q']) ? trim(mysqli_real_escape_string($conn, $_GET['q'])) : '';
+
+    $where_radar = "DATE(r.fecha_ingreso) = '$fecha'";
+    if (!empty($search_radar)) {
+        $where_radar .= " AND (r.placa_unidad LIKE '%$search_radar%' OR r.nombre_conductor LIKE '%$search_radar%' OR r.dni_conductor LIKE '%$search_radar%')";
+    }
 
     // KPIs
-    $stmt_kpis = $conn->prepare(
-        "SELECT
-            SUM(CASE WHEN tipo_movimiento = 'INGRESO' THEN 1 ELSE 0 END) as in_today,
-            SUM(CASE WHEN tipo_movimiento = 'SALIDA' THEN 1 ELSE 0 END) as out_today
-         FROM registros_garita WHERE DATE(fecha_ingreso) = ?"
-    );
-    $stmt_kpis->bind_param("s", $fecha);
-    $stmt_kpis->execute();
-    $res_kpis = $stmt_kpis->get_result()->fetch_assoc();
+    $q_kpis = mysqli_query($conn, "SELECT 
+        SUM(CASE WHEN tipo_movimiento = 'INGRESO' THEN 1 ELSE 0 END) as in_today,
+        SUM(CASE WHEN tipo_movimiento = 'SALIDA' THEN 1 ELSE 0 END) as out_today
+        FROM registros_garita WHERE DATE(fecha_ingreso) = '$fecha'");
+    $res_kpis = mysqli_fetch_assoc($q_kpis);
 
     // Ranking
-    $stmt_top = $conn->prepare(
-        "SELECT empresa, COUNT(*) as total FROM registros_garita
-         WHERE tipo_movimiento = 'SALIDA' AND DATE(fecha_ingreso) = ?
-         GROUP BY empresa ORDER BY total DESC LIMIT 5"
-    );
-    $stmt_top->bind_param("s", $fecha);
-    $stmt_top->execute();
-    $res_top = $stmt_top->get_result();
+    $sql_top = "SELECT empresa, COUNT(*) as total FROM registros_garita WHERE tipo_movimiento = 'SALIDA' AND DATE(fecha_ingreso) = '$fecha' GROUP BY empresa ORDER BY total DESC LIMIT 5";
+    $q_top = mysqli_query($conn, $sql_top);
     $top_empresas = [];
-    while ($row = $res_top->fetch_assoc()) { $top_empresas[] = $row; }
+    while($row = mysqli_fetch_assoc($q_top)) { $top_empresas[] = $row; }
 
-    // Radar — con o sin filtro de búsqueda
-    if (!empty($search_radar)) {
-        $search_like = '%' . $search_radar . '%';
-        $stmt_feed = $conn->prepare(
-            "SELECT r.*, v.marca as v_marca, v.tipo_vehiculo as v_tipo, d.nro_licencia as d_licencia
-             FROM registros_garita r
-             LEFT JOIN vehiculos v ON r.placa_unidad = v.placa
-             LEFT JOIN detalles_conductor d ON r.dni_conductor = d.dni
-             WHERE DATE(r.fecha_ingreso) = ?
-               AND (r.placa_unidad LIKE ? OR r.nombre_conductor LIKE ? OR r.dni_conductor LIKE ?)
-             ORDER BY r.fecha_ingreso DESC LIMIT 100"
-        );
-        $stmt_feed->bind_param("ssss", $fecha, $search_like, $search_like, $search_like);
-    } else {
-        $stmt_feed = $conn->prepare(
-            "SELECT r.*, v.marca as v_marca, v.tipo_vehiculo as v_tipo, d.nro_licencia as d_licencia
-             FROM registros_garita r
-             LEFT JOIN vehiculos v ON r.placa_unidad = v.placa
-             LEFT JOIN detalles_conductor d ON r.dni_conductor = d.dni
-             WHERE DATE(r.fecha_ingreso) = ?
-             ORDER BY r.fecha_ingreso DESC LIMIT 100"
-        );
-        $stmt_feed->bind_param("s", $fecha);
-    }
-    $stmt_feed->execute();
-    $res_feed = $stmt_feed->get_result();
+    // Radar
+    $sql_feed = "SELECT r.*, v.marca as v_marca, v.tipo_vehiculo as v_tipo, d.nro_licencia as d_licencia
+                 FROM registros_garita r
+                 LEFT JOIN vehiculos v ON r.placa_unidad = v.placa
+                 LEFT JOIN detalles_conductor d ON r.dni_conductor = d.dni
+                 WHERE $where_radar
+                 ORDER BY r.fecha_ingreso DESC LIMIT 100";
+    $q_feed = mysqli_query($conn, $sql_feed);
     $feed = [];
-    while ($row = $res_feed->fetch_assoc()) {
+    while ($row = mysqli_fetch_assoc($q_feed)) {
         $row['fecha_fmt'] = date('d/m/Y', strtotime($row['fecha_ingreso']));
         $row['hora_fmt'] = date('H:i', strtotime($row['fecha_ingreso']));
         $feed[] = $row;
@@ -117,7 +88,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <title>SITRAN | Centro de Monitoreo Profesional</title>
     <!-- FUENTES E ICONOS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
     <style>
@@ -165,9 +135,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             background: var(--black-soft);
             padding: 25px 35px;
             display: grid;
-            grid-template-columns: 1fr 1fr 320px;
+            grid-template-columns: 1fr 1fr auto;
             gap: 25px;
-            align-items: end;
+            align-items: flex-end;
             border-bottom: 2px solid var(--gray-dark);
         }
 
@@ -182,16 +152,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             letter-spacing: 1.5px;
         }
         .input-wrapper { position: relative; }
-        .input-wrapper input {
-            width: 100%;
-            box-sizing: border-box;
-            background: var(--gray-dark);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            padding: 14px 14px 14px 48px;
-            border-radius: 6px;
-            color: white;
-            font-size: 13px;
-            outline: none;
+        .input-wrapper input { 
+            width: 100%; 
+            background: var(--gray-dark); 
+            border: 1px solid rgba(197, 160, 89, 0.3); 
+            padding: 14px 14px 14px 48px; 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 13px; 
+            outline: none; 
             transition: all 0.3s;
         }
         .input-wrapper input:focus { 
@@ -252,15 +221,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         /* LAYOUT PRINCIPAL */
         .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
-        @media (max-width: 1200px) { 
-            .main-grid { grid-template-columns: 1fr; } 
-            .search-section { grid-template-columns: 1fr; }
-            .kpi-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 600px) {
-            .kpi-grid { grid-template-columns: 1fr; }
-            .kpi-text h1 { font-size: 2rem; }
-        }
+        @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
+
         .content-box { 
             background: var(--white); 
             border-radius: 4px; 
@@ -390,42 +352,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     </div>
 </div>
 
-<div class="app-layout">
-    
-    <!-- SIDEBAR -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="Assets Index/logo.png" alt="Hochschild Logo" class="sidebar-logo">
-            <h2 class="sidebar-title">SITRAN</h2>
+<header class="header-main">
+    <div class="brand">
+        <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
+        <span class="brand-text">SITRAN MASTER MONITOR</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:25px;">
+        <div style="text-align:right;">
+            <div style="font-size:14px; font-weight:800; color:var(--gold); letter-spacing:1px;"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+            <div style="font-size:10px; color:#666; font-weight:700;">COMMAND CENTER</div>
         </div>
-        <div class="sidebar-menu">
-            <div class="menu-label">Principal</div>
-            <a href="panel.php" class="sidebar-link"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="monitoreo.php" class="sidebar-link active"><i class="fa-solid fa-desktop"></i> Monitoreo</a>
-            
-            <div class="menu-label" style="margin-top: 20px;">Operación</div>
-            <a href="control_garita_principal.php" class="sidebar-link"><i class="fa-solid fa-id-card-clip"></i> Control Acceso</a>
-        </div>
-    </nav>
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content" style="background: var(--black-soft); min-height: 100vh;">
-        <!-- TOPBAR OVERRIDE FOR DARK THEME -->
-        <header class="topbar" style="background: var(--black); border-bottom: 2px solid var(--gold);">
-            <div class="topbar-left">
-                <button class="menu-toggle" onclick="toggleSidebar()" style="color:var(--gold);"><i class="fa-solid fa-bars"></i></button>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="font-family:'Orbitron'; color:var(--gold); font-weight:700; font-size:1.1rem; letter-spacing:2px;">SITRAN MASTER MONITOR</span>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <div style="text-align:right;">
-                    <div style="font-size:12px; font-weight:800; color:var(--gold); letter-spacing:1px;"><?php echo strtoupper($_SESSION['usuario']); ?></div>
-                    <div style="font-size:9px; color:#666; font-weight:700;">COMMAND CENTER</div>
-                </div>
-            </div>
-        </header>
+        <a href="panel.php" style="color:var(--gold); font-size:24px; transition:0.3s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gold)'"><i class="fa-solid fa-house-chimney"></i></a>
+    </div>
+</header>
 
 <div class="search-section">
     <!-- BUSCADOR INDEPENDIENTE DE PERSONAL -->
@@ -449,7 +388,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div style="display:flex; flex-direction:column; gap:8px;">
         <label style="font-size:10px; color:var(--gold); font-weight:800; letter-spacing:1px;">CALENDARIO</label>
         <div style="display:flex; gap:12px;">
-            <input type="date" id="filter-date" value="<?= date('Y-m-d') ?>" style="background:var(--gray-dark); border:1px solid var(--gold); color:white; padding:12px; border-radius:4px; font-size:14px; outline:none; min-width:160px; box-sizing:border-box;" onchange="loadDashboard()">
+            <input type="date" id="filter-date" value="<?= date('Y-m-d') ?>" style="background:var(--gray-dark); border:1px solid var(--gold); color:white; padding:12px; border-radius:4px; font-size:14px; outline:none;" onchange="loadDashboard()">
             <button onclick="loadDashboard()" id="btn-refresh" class="btn-refresh">
                 <i class="fa-solid fa-sync"></i> ACTUALIZAR
             </button>
@@ -606,16 +545,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     function closeModal() { document.getElementById('modal-person').style.display = 'none'; }
     window.onclick = (e) => { if(e.target == document.getElementById('modal-person')) closeModal(); }
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebarOverlay').classList.toggle('active');
-    }
-
     document.addEventListener('DOMContentLoaded', () => loadDashboard());
 </script>
-
-    </div> <!-- End main-content -->
-</div> <!-- End app-layout -->
-
 </body>
 </html>

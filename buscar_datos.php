@@ -2,6 +2,7 @@
 // ==============================================================================
 // BUSCAR DATOS (VEHÍCULOS Y SOAT) - PROTECCIÓN ESTRICTA DE TOKENS
 // ==============================================================================
+error_reporting(0); // Evitar que errores PHP rompan la respuesta JSON
 header('Content-Type: application/json; charset=utf-8');
 
 // 1. CONEXIÓN DIRECTA
@@ -18,11 +19,9 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
     // =========================================================
     // FASE 1: BÚSQUEDA EN BASE DE DATOS LOCAL (COSTO: 0 TOKENS)
     // =========================================================
-    $stmt = $conn->prepare("SELECT * FROM vehiculos WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '') = ? LIMIT 1");
-    $stmt->bind_param("s", $placa_limpia);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $fila = ($res->num_rows > 0) ? $res->fetch_assoc() : null;
+    $sql = "SELECT * FROM vehiculos WHERE REPLACE(REPLACE(placa, '-', ''), ' ', '') = '$placa_limpia' LIMIT 1";
+    $res = mysqli_query($conn, $sql);
+    $fila = ($res && mysqli_num_rows($res) > 0) ? mysqli_fetch_assoc($res) : null;
 
     // Evaluamos si tenemos la info completa localmente para NO llamar a la API
     $tiene_info_basica = ($fila && !empty($fila['marca']) && $fila['marca'] !== '-' && $fila['marca'] !== 'POR DEFINIR');
@@ -57,7 +56,7 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
     // =========================================================
     
     // --> TU TOKEN REAL <--
-    $token = FACTILIZA_TOKEN;
+    $token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MDQwMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.Qvy2TBxJ6NVkrGvolemAE9Aj_D-CyBrQqzhjKJXY1CQ'; 
     
     $marca = $fila['marca'] ?? 'POR DEFINIR';
     $modelo = $fila['modelo'] ?? '-';
@@ -178,7 +177,7 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
         $soat_vcto_front = '01/01/1999'; // Esto activará el recuadro ROJO en tu frontend
     }
 
-    // Devolver al Frontend sin datos de debug internos
+    // Devolver al Frontend
     echo json_encode([
         'encontrado' => true, 
         'origen' => 'API_GUARDADO', 
@@ -190,7 +189,8 @@ if (isset($_POST['placa']) && $_POST['tipo'] == 'vehiculo') {
         'color' => $color,
         'anio' => $fila['anio'] ?? '', 
         'empresa_transporte' => $emp_t, 
-        'soat_vcto' => $soat_vcto_front
+        'soat_vcto' => $soat_vcto_front,
+        '_debug_soat_api' => isset($res_soat_api) ? json_decode($res_soat_api, true) : 'No consultada' // Diagnóstico secreto
     ]);
     exit;
 
