@@ -174,19 +174,18 @@ $res_hist = mysqli_query($conn, $sql_hist);
 
         /* ═══ TOPBAR ═══ */
         .header-main {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
             background: rgba(255,255,255,.97);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            padding: 0 20px;
-            height: 60px;
+            padding: 0 40px;
+            height: 64px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(0,0,0,.07);
-            box-shadow: 0 1px 0 rgba(255,255,255,1), 0 2px 16px rgba(0,0,0,.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
         .header-main::after {
             content: '';
@@ -197,7 +196,20 @@ $res_hist = mysqli_query($conn, $sql_hist);
             height: 2px;
             background: linear-gradient(90deg, var(--ink), var(--g), var(--ink));
         }
-        .header-user { text-align: left; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { height: 32px; }
+        .brand-text {
+            font-weight: 800;
+            font-size: .85rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: var(--g-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .header-user { text-align: right; }
         .header-user-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .5px; }
         .header-user-role { font-size: 9px; color: var(--ink5); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
         .header-home {
@@ -719,11 +731,17 @@ $res_hist = mysqli_query($conn, $sql_hist);
 </div>
 
 <header class="header-main">
-    <div class="header-user">
-        <div class="header-user-name"><?php echo strtoupper($_SESSION['usuario']); ?></div>
-        <div class="header-user-role">Command Center</div>
+    <div class="brand">
+        <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
+        <span class="brand-text">SITRAN MASTER MONITOR</span>
     </div>
-    <a href="panel.php" class="header-home"><i class="fa-solid fa-house-chimney"></i></a>
+    <div class="header-right">
+        <div class="header-user">
+            <div class="header-user-name"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+            <div class="header-user-role">Command Center</div>
+        </div>
+        <a href="panel.php" class="header-home"><i class="fa-solid fa-house-chimney"></i></a>
+    </div>
 </header>
 
 <div class="container">
