@@ -784,7 +784,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     });
                 }
                 document.getElementById('table-body').innerHTML = html;
-                document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
+                document.getElementById('last-update').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
             })
             .finally(() => btn.querySelector('i').classList.remove('spin'));
     }
