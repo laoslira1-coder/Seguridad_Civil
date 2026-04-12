@@ -1,0 +1,3 @@
+Prueba de conexión GitHub -> Hostinger
+Fecha: 2026-04-12
+Estado: OK

@@ -30,7 +30,7 @@ if (isset($_POST['dni_buscar'])) {
     $busqueda = mysqli_real_escape_string($conn, $_POST['dni_buscar']);
     $sql = "SELECT * FROM fuerza_laboral WHERE dni = '$busqueda' LIMIT 1";
     $res = mysqli_query($conn, $sql);
-    
+
     if ($res && mysqli_num_rows($res) > 0) {
         $persona = mysqli_fetch_assoc($res);
     } else {
@@ -42,17 +42,17 @@ if (isset($_POST['dni_buscar'])) {
 // 3. REGISTRO (CORREGIDO: ELIMINADO num_acompanantes)
 // ---------------------------------------------------------
 if (isset($_POST['btn_registrar'])) {
-    $dni = $_POST['dni_final']; 
-    $nombre = strtoupper($_POST['nombre_final']); 
+    $dni = $_POST['dni_final'];
+    $nombre = strtoupper($_POST['nombre_final']);
     $empresa = strtoupper($_POST['empresa_final']);
-    
+
     // Si es nuevo, insertamos en fuerza_laboral
     if (isset($_POST['es_nuevo']) && $_POST['es_nuevo'] == '1') {
-        $tipo_p = $_POST['tipo_personal_new']; 
+        $tipo_p = $_POST['tipo_personal_new'];
         $check = mysqli_query($conn, "SELECT dni FROM fuerza_laboral WHERE dni = '$dni'");
         if (mysqli_num_rows($check) == 0) {
-            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion) 
-                        VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo_p', '-', 'PEATON', 'ACTIVO')"; 
+            $sql_new = "INSERT INTO fuerza_laboral (dni, nombres, apellidos, empresa, tipo_personal, area, cargo, estado_validacion)
+                        VALUES ('$dni', '$nombre', '-', '$empresa', '$tipo_p', '-', 'PEATON', 'ACTIVO')";
             if(!mysqli_query($conn, $sql_new)) {
                 die("Error al crear personal: " . mysqli_error($conn));
             }
@@ -60,7 +60,7 @@ if (isset($_POST['btn_registrar'])) {
     }
 
     $mov = $_POST['tipo_movimiento'];
-    
+
     if ($mov === 'SALIDA') {
         $destino = strtoupper($_POST['destino_salida']);
         $autoriza = $_POST['autoriza_salida'];
@@ -75,15 +75,15 @@ if (isset($_POST['btn_registrar'])) {
 
     // SQL INSERT CORREGIDO (Quitamos num_acompanantes que causaba el error 500)
     $sql_reg = "INSERT INTO registros_garita (
-                    dni_conductor, nombre_conductor, empresa, tipo_movimiento, 
-                    destino, autorizado_por, anfitrion, motivo, operador_garita, 
+                    dni_conductor, nombre_conductor, empresa, tipo_movimiento,
+                    destino, autorizado_por, anfitrion, motivo, operador_garita,
                     fecha_ingreso, acompanante_1, acompanante_2, acompanante_3, acompanante_4
                 ) VALUES (
-                    '$dni', '$nombre', '$empresa', '$mov', 
-                    '$destino', '$autoriza', '$anfitrion', '$motivo', '$op', 
+                    '$dni', '$nombre', '$empresa', '$mov',
+                    '$destino', '$autoriza', '$anfitrion', '$motivo', '$op',
                     NOW(), 'NINGUNO', 'NINGUNO', 'NINGUNO', 'NINGUNO'
                 )";
-    
+
     if (mysqli_query($conn, $sql_reg)) {
         header("Location: control_personal.php?status=ok");
         exit();
@@ -107,141 +107,644 @@ $res_hist = mysqli_query($conn, $sql_hist);
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#F4F4F4">
     <title>Control Personal | SITRAN</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
 
     <style>
-        :root { --h-gold: #c5a059; --h-dark: #111827; --h-bg: #f3f4f6; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--h-bg); margin: 0; padding-bottom: 50px; }
-
-        /* HEADER */
-        .header-main { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--h-gold); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .logo-header { height: 45px; }
-
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        
-        /* ALERTAS */
-        .alert-box { padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: 700; animation: fadeIn 0.5s; }
-        .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; } 
-        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-
-        /* ESCÁNER (TARJETA NEGRA) */
-        .driver-search-box { background: var(--h-dark); color: white; border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
-        .big-scan-btn { background: var(--h-gold); color: white; border: none; width: 90px; height: 90px; border-radius: 50%; font-size: 34px; cursor: pointer; box-shadow: 0 0 25px rgba(197, 160, 89, 0.6); margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% {box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7);} 70% {box-shadow: 0 0 0 15px rgba(197, 160, 89, 0);} 100% {box-shadow: 0 0 0 0 rgba(197, 160, 89, 0);} }
-        .input-driver { background: rgba(255,255,255,0.1); border: 2px solid #374151; color: white; padding: 15px; width: 80%; border-radius: 12px; text-align: center; font-family: 'Orbitron'; font-size: 18px; outline: none; }
-        
-        /* FICHA */
-        .result-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); animation: slideUp 0.4s; }
-        @keyframes slideUp { from {transform: translateY(20px); opacity:0;} to {transform: translateY(0); opacity:1;} }
-        .card-header { background: var(--h-dark); padding: 30px 20px; text-align: center; border-bottom: 4px solid var(--h-gold); }
-        .card-header h2 { margin: 0; color: white; font-family: 'Orbitron'; font-size: 20px; letter-spacing: 1px; }
-        .card-header p { margin: 5px 0 0; color: var(--h-gold); font-size: 12px; font-weight: 600; }
-        .form-section { padding: 25px; }
-
-        /* INPUTS */
-        .label-mini { font-size: 10px; font-weight: 800; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 5px; }
-        .input-comp { width: 100%; padding: 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; background: #f9fafb; margin-bottom: 15px; }
-        .input-comp:focus { border-color: var(--h-gold); background: white; outline: none; }
-        
-        /* BOTONES DE SELECCIÓN */
-        .action-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn-sel { 
-            flex: 1; padding: 18px; border-radius: 12px; font-weight: 800; cursor: pointer; text-align: center; 
-            font-size: 13px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;
-            border: 2px solid #e2e8f0; color: #94a3b8; background: #f8fafc;
+        :root {
+            --g: #C49A2C;
+            --gd: #8A6A14;
+            --gl: #FBF6E8;
+            --gr: rgba(196,154,44,.15);
+            --g-grad: linear-gradient(135deg,#7A5A0E,#C49A2C,#E8C85A);
+            --ink: #0A0A0A;
+            --ink2: #1A1A1A;
+            --ink3: #3A3A3A;
+            --ink4: #666666;
+            --ink5: #999999;
+            --ink6: #BBBBBB;
+            --bg: #F4F4F4;
+            --surf: #FFFFFF;
+            --surf2: #FAFAFA;
+            --b: rgba(0,0,0,.08);
+            --b-gold: rgba(196,154,44,.3);
+            --red: #DC2626;
+            --green: #16A34A;
+            --gb: #F0FDF4;
+            --gbo: #86EFAC;
+            --rb: #FEF2F2;
+            --rbo: rgba(252,165,165,.4);
+            --font: 'Inter', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --h-gold: #C49A2C;
+            --h-dark: #0A0A0A;
+            --visita: #EA580C;
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 16px;
+            --r-xl: 20px;
+            --r-2xl: 24px;
         }
-        
-        /* ESTADOS ACTIVOS FORZADOS */
-        .active-gold { background: var(--h-gold) !important; color: white !important; border-color: var(--h-gold) !important; box-shadow: 0 8px 20px rgba(197, 160, 89, 0.4); transform: translateY(-2px); }
-        .active-black { background: var(--h-dark) !important; color: white !important; border-color: var(--h-dark) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transform: translateY(-2px); }
-        
-        .btn-confirm { width: 100%; padding: 20px; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; margin-top: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition:0.3s; color: white; }
-        .bg-gold { background: var(--h-gold); box-shadow: 0 4px 0 #a17f3a; }
-        .bg-black { background: var(--h-dark); box-shadow: 0 4px 0 #000; }
 
-        /* TABS TIPO */
-        .type-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #f3f4f6; padding: 4px; border-radius: 8px; }
-        .type-tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer; color: #9ca3af; }
-        
-        /* HISTORIAL */
-        .history-box { margin-top: 30px; }
-        .history-item { 
-            background: white; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; 
-            border-left: 5px solid transparent; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { height: 100%; -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: var(--font);
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100svh;
+            padding-bottom: 60px;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
         }
-        .history-item.item-in { border-left-color: var(--h-gold); }
-        .history-item.item-out { border-left-color: var(--h-dark); }
-        
-        .h-name { font-weight: 700; font-size: 14px; color: #374151; display:flex; align-items:center; }
-        .h-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-        .h-time { font-family: 'Orbitron'; font-weight: 700; color: var(--h-dark); font-size: 12px; }
-        .btn-details-icon { background: #f1f5f9; color: var(--h-gold); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        a { text-decoration: none; color: inherit; }
+        ::selection { background: var(--gl); color: var(--gd); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
 
-        .strict-box { background: #fef2f2; border: 1px solid #fee2e2; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: none; border-left: 4px solid var(--h-dark); }
-        .strict-label { color: var(--h-dark); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        /* ═══ TOPBAR ═══ */
+        .header-main {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 0 16px;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,.07);
+            box-shadow: 0 1px 0 rgba(255,255,255,1), 0 2px 16px rgba(0,0,0,.05);
+        }
+        .header-main::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--ink) 0%, var(--g) 20%, #E8C85A 50%, var(--g) 80%, transparent 100%);
+            opacity: .7;
+        }
+        .btn-back-top {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink4);
+            padding: 7px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--b);
+            background: var(--surf);
+            transition: all .2s;
+        }
+        .btn-back-top:hover { color: var(--g); border-color: var(--b-gold); background: var(--gl); transform: translateX(-2px); }
+        .topbar-logos { display: flex; gap: 12px; align-items: center; }
+        .logo-header { height: 32px; width: auto; object-fit: contain; }
 
-        /* MODAL DETALLES */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-card { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); animation: popIn 0.3s; }
-        @keyframes popIn { from{transform:scale(0.9);} to{transform:scale(1);} }
-        
-        .det-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding: 12px 0; font-size: 13px; }
-        .det-label { font-weight: 800; color: #94a3b8; text-transform: uppercase; font-size: 10px; }
-        .det-val { font-weight: 600; color: var(--h-dark); text-align: right; }
+        /* ═══ CONTAINER ═══ */
+        .container { max-width: 480px; margin: 0 auto; padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; }
+
+        /* ═══ ALERT ═══ */
+        .alert-box {
+            padding: 14px 18px;
+            border-radius: var(--r-lg);
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .success { background: var(--gb); color: var(--green); border: 1px solid var(--gbo); }
+        .error { background: var(--rb); color: var(--red); border: 1px solid var(--rbo); }
+        .info { background: var(--gl); color: var(--gd); border: 1px solid var(--b-gold); }
+
+        /* ═══ SCANNER HERO CARD ═══ */
+        .driver-search-box {
+            background: var(--surf);
+            border: 1px solid rgba(0,0,0,.07);
+            border-radius: var(--r-2xl);
+            padding: 40px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 16px rgba(0,0,0,.06), 0 1px 0 #fff inset;
+        }
+        .driver-search-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--g-grad);
+            border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+        }
+        .big-scan-btn {
+            background: var(--ink);
+            color: var(--g);
+            border: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 0 0 8px rgba(196,154,44,.12), 0 8px 24px rgba(0,0,0,.2);
+            margin-bottom: 20px;
+            transition: all .25s;
+            position: relative;
+            z-index: 1;
+        }
+        .big-scan-btn:hover { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(196,154,44,.18), 0 12px 32px rgba(0,0,0,.25); }
+        .big-scan-btn:active { transform: scale(.97); }
+
+        .scan-title {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink);
+            margin: 16px 0 24px;
+        }
+
+        .input-driver {
+            background: var(--bg);
+            border: 2px solid var(--b);
+            color: var(--ink);
+            padding: 16px;
+            width: 100%;
+            max-width: 280px;
+            border-radius: var(--r-md);
+            text-align: center;
+            font-family: var(--mono);
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            outline: none;
+            transition: all .25s;
+        }
+        .input-driver:focus { border-color: var(--g); background: var(--surf); box-shadow: 0 0 0 4px var(--gr); }
+        .input-driver::placeholder { color: var(--ink6); font-weight: 500; letter-spacing: 1px; }
+
+        .scan-hint {
+            font-size: 10px;
+            color: var(--ink5);
+            margin-top: 16px;
+            font-weight: 500;
+        }
+
+        /* ═══ RESULT CARD ═══ */
+        .result-card {
+            background: var(--surf);
+            border-radius: var(--r-2xl);
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,.07);
+            box-shadow: 0 2px 16px rgba(0,0,0,.06), 0 8px 32px rgba(0,0,0,.04);
+            animation: slideUp 0.35s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .card-header {
+            background: var(--ink);
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--g-grad);
+        }
+        .card-header h2 {
+            margin: 0;
+            color: var(--surf);
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .card-header p {
+            margin: 6px 0 0;
+            color: var(--g);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .5px;
+        }
+        .card-header .badge-tipo {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 6px;
+            letter-spacing: .5px;
+        }
+        .badge-permanente { background: rgba(255,255,255,.15); color: #fff; }
+        .badge-visita { background: var(--visita); color: #fff; }
+
+        .form-section { padding: 24px; }
+
+        /* ═══ LABELS & INPUTS ═══ */
+        .label-mini {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--ink5);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .input-comp {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--b);
+            border-radius: var(--r-md);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink2);
+            background: var(--bg);
+            font-family: var(--font);
+            margin-bottom: 14px;
+            transition: all .25s;
+            box-sizing: border-box;
+        }
+        .input-comp:focus { outline: none; border-color: var(--g); background: var(--surf); box-shadow: 0 0 0 3px var(--gr); }
+
+        /* ═══ ACTION BUTTONS (INGRESO/SALIDA + PERMANENTE/VISITA) ═══ */
+        .action-buttons { display: flex; gap: 8px; margin-bottom: 18px; }
+        .btn-sel {
+            flex: 1;
+            padding: 16px 12px;
+            border-radius: var(--r-lg);
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+            transition: all .25s cubic-bezier(.4,0,.2,1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid var(--b);
+            color: var(--ink5);
+            background: var(--surf2);
+            font-family: var(--font);
+            letter-spacing: .3px;
+        }
+        .btn-sel:hover { border-color: var(--b-gold); background: var(--gl); color: var(--gd); }
+        .btn-sel:active { transform: scale(.97); }
+
+        .active-gold {
+            background: var(--ink) !important;
+            color: var(--g) !important;
+            border-color: var(--ink) !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1);
+            transform: translateY(-1px);
+        }
+        .active-black {
+            background: var(--red) !important;
+            color: var(--surf) !important;
+            border-color: var(--red) !important;
+            box-shadow: 0 4px 16px rgba(220,38,38,.25), inset 0 1px 0 rgba(255,255,255,.15);
+            transform: translateY(-1px);
+        }
+
+        /* ═══ SUBMIT BUTTONS ═══ */
+        .btn-confirm {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: var(--r-lg);
+            font-weight: 800;
+            font-size: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: var(--font);
+            color: white;
+            transition: all .25s cubic-bezier(.4,0,.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-confirm:hover { transform: translateY(-1px); }
+        .btn-confirm:active { transform: scale(.98); }
+        .bg-gold {
+            background: var(--ink);
+            box-shadow: 0 4px 20px rgba(0,0,0,.2), 0 0 0 0 var(--gr);
+        }
+        .bg-gold:hover { box-shadow: 0 6px 24px rgba(0,0,0,.25), 0 0 24px var(--gr); }
+        .bg-black {
+            background: var(--red);
+            box-shadow: 0 4px 20px rgba(220,38,38,.2);
+        }
+        .bg-black:hover { box-shadow: 0 6px 24px rgba(220,38,38,.3); }
+
+        /* ═══ SALIDA BOX ═══ */
+        .strict-box {
+            background: var(--rb);
+            border: 1px solid var(--rbo);
+            padding: 16px;
+            border-radius: var(--r-lg);
+            margin-bottom: 18px;
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .strict-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 3px;
+            background: var(--red);
+            border-radius: var(--r-lg) 0 0 var(--r-lg);
+        }
+        .strict-label {
+            color: var(--red);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        /* ═══ VISITA BOX ═══ */
+        #visita-box {
+            background: var(--gl);
+            border: 1px solid var(--b-gold);
+            padding: 16px;
+            border-radius: var(--r-lg);
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        #visita-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 3px;
+            background: var(--g-grad);
+            border-radius: var(--r-lg) 0 0 var(--r-lg);
+        }
+        #visita-box .label-mini { color: var(--gd); }
+
+        /* ═══ SECTION LABEL ═══ */
+        .sec-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 2px;
+        }
+        .sec-txt { font-size: 9px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+        .sec-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(0,0,0,.12), transparent); }
+
+        /* ═══ HISTORY ═══ */
+        .history-box { display: flex; flex-direction: column; gap: 8px; }
+
+        .history-item {
+            background: var(--surf);
+            padding: 14px 16px;
+            border-radius: var(--r-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,.07);
+            box-shadow: 0 1px 4px rgba(0,0,0,.03);
+            cursor: pointer;
+            transition: all .22s cubic-bezier(.4,0,.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+        .history-item::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 4px;
+            border-radius: var(--r-lg) 0 0 var(--r-lg);
+        }
+        .history-item:hover { transform: translateX(2px); box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+
+        .history-item.item-in::before { background: var(--green); }
+        .history-item.item-in:hover { border-color: rgba(22,163,74,.2); background: linear-gradient(90deg, rgba(240,253,244,.5), var(--surf)); }
+
+        .history-item.item-out::before { background: var(--red); }
+        .history-item.item-out:hover { border-color: rgba(220,38,38,.15); background: linear-gradient(90deg, rgba(254,242,242,.5), var(--surf)); }
+
+        .h-name { font-weight: 700; font-size: 13px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+        .h-badge-in, .h-badge-out {
+            font-size: 8px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: .5px;
+        }
+        .h-badge-in { background: var(--gb); color: var(--green); }
+        .h-badge-out { background: var(--rb); color: var(--red); }
+
+        .h-desc { font-size: 10px; color: var(--ink5); margin-top: 3px; padding-left: 2px; }
+        .h-time { font-family: var(--mono); font-weight: 600; color: var(--ink); font-size: 12px; }
+        .btn-details-icon {
+            width: 28px; height: 28px;
+            background: var(--bg);
+            border: 1px solid var(--b);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            color: var(--ink5);
+            transition: all .2s;
+            margin-top: 6px;
+        }
+        .history-item:hover .btn-details-icon { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
+
+        /* ═══ MODALS ═══ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .modal-card {
+            background: var(--surf);
+            padding: 28px 24px;
+            border-radius: var(--r-2xl);
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 24px 80px rgba(0,0,0,.2);
+            animation: modalIn 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--g-grad);
+            border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+        }
+        @keyframes modalIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-icon-wrap {
+            width: 56px; height: 56px;
+            background: var(--gl);
+            border: 1px solid var(--b-gold);
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 22px;
+            color: var(--gd);
+        }
+        .modal-title { margin: 0 0 20px; color: var(--ink); font-size: 16px; font-weight: 800; text-align: center; letter-spacing: -.2px; }
+
+        .det-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,.05);
+            padding: 11px 0;
+            font-size: 13px;
+        }
+        .det-row:last-child { border-bottom: none; }
+        .det-label { font-weight: 700; color: var(--ink5); text-transform: uppercase; font-size: 9px; letter-spacing: .5px; }
+        .det-val { font-weight: 700; color: var(--ink); text-align: right; }
+
+        .btn-modal-close {
+            width: 100%;
+            padding: 14px;
+            background: var(--ink);
+            color: var(--surf);
+            border: none;
+            border-radius: var(--r-md);
+            margin-top: 20px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: var(--font);
+            letter-spacing: .5px;
+            transition: all .2s;
+        }
+        .btn-modal-close:hover { opacity: .9; }
+
+        /* Camera modal */
+        .camera-inner {
+            width: 100%;
+            max-width: 380px;
+            background: var(--surf);
+            border-radius: var(--r-2xl);
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,.3);
+            position: relative;
+        }
+        .camera-inner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--g-grad);
+            z-index: 1;
+        }
+        .camera-header {
+            background: var(--ink);
+            padding: 16px;
+            text-align: center;
+            color: var(--g);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        .camera-close {
+            width: 100%;
+            padding: 14px;
+            background: var(--ink);
+            color: var(--surf);
+            border: none;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: opacity .2s;
+        }
+        .camera-close:hover { opacity: .85; }
+
+        /* Cancel link */
+        .cancel-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: var(--red);
+            font-weight: 700;
+            font-size: 12px;
+            transition: opacity .2s;
+        }
+        .cancel-link:hover { opacity: .7; }
+
+        /* ═══ TYPE TABS ═══ */
+        .type-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg); padding: 4px; border-radius: var(--r-md); }
+        .type-tab { flex: 1; text-align: center; padding: 10px; border-radius: var(--r-sm); font-weight: 700; font-size: 11px; cursor: pointer; color: var(--ink5); transition: all .2s; }
     </style>
 </head>
 <body>
 
 <div id="camera-modal" class="modal-overlay">
-    <div style="text-align:center; width:100%; max-width:400px;">
-        <div style="color:white; margin-bottom:20px; font-family:'Orbitron';">ESCANEAR DNI</div>
-        <div style="width:100%; border:2px solid var(--h-gold); border-radius:20px; overflow:hidden;"><div id="reader"></div></div>
-        <button onclick="document.getElementById('camera-modal').style.display='none'" style="margin-top:20px; padding:10px 30px; border-radius:20px; border:none; font-weight:800;">CERRAR</button>
+    <div class="camera-inner">
+        <div class="camera-header">ESCANEAR DNI</div>
+        <div id="reader"></div>
+        <button onclick="document.getElementById('camera-modal').style.display='none'" class="camera-close">CERRAR CÁMARA</button>
     </div>
 </div>
 
 <div id="details-modal" class="modal-overlay" onclick="closeDetails()">
     <div class="modal-card" onclick="event.stopPropagation()">
-        <div style="text-align:center; margin-bottom:20px;">
-            <div style="width:60px; height:60px; background:#f8fafc; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:24px; color:var(--h-gold);">
-                <i class="fa-solid fa-file-invoice"></i>
-            </div>
-            <h3 style="margin:0; color:var(--h-dark); font-family:'Orbitron';">DETALLE MOVIMIENTO</h3>
-        </div>
+        <div class="modal-icon-wrap"><i class="fa-solid fa-file-invoice"></i></div>
+        <h3 class="modal-title">Detalle del Movimiento</h3>
         <div id="modal-body"></div>
-        <button onclick="closeDetails()" style="width:100%; padding:15px; background:var(--h-dark); color:white; border:none; border-radius: 12px; margin-top:20px; font-weight:800; cursor:pointer;">CERRAR</button>
+        <button onclick="closeDetails()" class="btn-modal-close">CERRAR</button>
     </div>
 </div>
 
 <nav class="header-main">
-    <a href="control_garita_principal.php" style="color:#333; font-size:22px;"><i class="fa-solid fa-chevron-left"></i></a>
-    <div style="display:flex; gap:15px;">
+    <a href="control_garita_principal.php" class="btn-back-top">
+        <i class="fa-solid fa-chevron-left" style="font-size:11px;"></i>
+        <span>Volver</span>
+    </a>
+    <div class="topbar-logos">
         <img src="Assets Index/logo.png" class="logo-header">
         <img src="Assets Index/seguridadcivil.png" class="logo-header">
     </div>
-    <div style="width:22px;"></div>
+    <div style="width:70px;"></div>
 </nav>
 
 <div class="container">
-    
+
     <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div> <?php endif; ?>
 
     <?php if (!$persona && !$nuevo_dni): ?>
         <div class="driver-search-box">
             <button onclick="openScanner()" class="big-scan-btn"><i class="fa-solid fa-qrcode"></i></button>
-            <h2 style="font-family:'Orbitron'; margin:15px 0 25px;">CONTROL PEATONAL</h2>
+            <h2 class="scan-title">Control Peatonal</h2>
             <form method="POST" id="formScan">
                 <input type="text" name="dni_buscar" id="inputDni" class="input-driver" placeholder="DNI..." autocomplete="off">
             </form>
-            <p style="font-size:12px; color:#9ca3af; margin-top:20px; font-weight:600;">Use el botón para activar cámara</p>
+            <p class="scan-hint">Escanee el código o ingrese el DNI manualmente</p>
         </div>
     <?php endif; ?>
 
@@ -251,32 +754,32 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <?php if ($persona): ?>
                     <h2><?php echo explode(" ", $persona['nombres'])[0] . " " . explode(" ", $persona['apellidos'])[0]; ?></h2>
                     <p><?php echo $persona['empresa']; ?> | DNI: <?php echo $persona['dni']; ?></p>
-                    
+
                     <?php if (isset($persona['tipo_personal']) && $persona['tipo_personal'] == 'VISITA'): ?>
-                        <div style="margin-top:10px; display:inline-block; background:var(--visita); color:white; font-size:10px; font-weight:800; padding:4px 10px; border-radius:4px;">VISITA</div>
+                        <div class="badge-tipo badge-visita">VISITA</div>
                     <?php else: ?>
-                        <div style="margin-top:10px; display:inline-block; background:rgba(255,255,255,0.2); color:white; font-size:10px; font-weight:800; padding:4px 10px; border-radius:4px;">PERMANENTE</div>
+                        <div class="badge-tipo badge-permanente">PERMANENTE</div>
                     <?php endif; ?>
                 <?php else: ?>
                     <h2>NUEVO PERSONAL</h2>
                     <p>DNI: <?php echo $nuevo_dni; ?></p>
                 <?php endif; ?>
             </div>
-            
+
             <div class="form-section">
                 <form method="POST">
                     <input type="hidden" name="dni_final" value="<?php echo $persona ? $persona['dni'] : $nuevo_dni; ?>">
-                    
+
                     <?php if (!$persona): ?>
                         <input type="hidden" name="es_nuevo" value="1">
-                        
+
                         <label class="label-mini">TIPO DE PERSONAL</label>
                         <div class="action-buttons">
                             <div class="btn-sel active-gold" id="tab-perm" onclick="setNewType('PERMANENTE')">PERMANENTE</div>
                             <div class="btn-sel" id="tab-vis" onclick="setNewType('VISITA')">VISITA</div>
                         </div>
                         <input type="hidden" name="tipo_personal_new" id="new_type" value="PERMANENTE">
-                        
+
                         <label class="label-mini">NOMBRE</label>
                         <input type="text" name="nombre_final" class="input-comp" required>
                         <label class="label-mini">EMPRESA</label>
@@ -286,10 +789,10 @@ $res_hist = mysqli_query($conn, $sql_hist);
                         <input type="hidden" name="empresa_final" value="<?php echo $persona['empresa']; ?>">
                     <?php endif; ?>
 
-                    <div id="visita-box" style="display:<?php echo (isset($persona) && $persona['tipo_personal']=='VISITA')?'block':'none'; ?>; background:#fff7ed; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #fdba74;">
-                        <label class="label-mini" style="color:#c2410c;">ANFITRIÓN</label>
+                    <div id="visita-box" style="display:<?php echo (isset($persona) && $persona['tipo_personal']=='VISITA')?'block':'none'; ?>;">
+                        <label class="label-mini">ANFITRIÓN</label>
                         <input type="text" name="anfitrion" class="input-comp" placeholder="A quien visita...">
-                        <label class="label-mini" style="color:#c2410c;">MOTIVO</label>
+                        <label class="label-mini">MOTIVO</label>
                         <input type="text" name="motivo" class="input-comp">
                     </div>
 
@@ -320,16 +823,21 @@ $res_hist = mysqli_query($conn, $sql_hist);
                     <button type="submit" name="btn_registrar" id="btn-submit" class="btn-confirm bg-gold">
                         REGISTRAR INGRESO
                     </button>
-                    
-                    <a href="control_personal.php" style="display:block; text-align:center; margin-top:15px; color:#ef4444; font-weight:800; text-decoration:none;">CANCELAR</a>
+
+                    <a href="control_personal.php" class="cancel-link">CANCELAR</a>
                 </form>
             </div>
         </div>
     <?php endif; ?>
 
+    <!-- HISTORIAL -->
+    <div class="sec-row">
+        <span class="sec-txt">Últimos Movimientos</span>
+        <div class="sec-line"></div>
+    </div>
+
     <div class="history-box">
-        <h3 style="font-size:11px; font-weight:800; color:#64748b; margin-bottom:10px;">ÚLTIMOS MOVIMIENTOS</h3>
-        <?php while($row = mysqli_fetch_assoc($res_hist)): 
+        <?php while($row = mysqli_fetch_assoc($res_hist)):
             $is_out = ($row['tipo_movimiento'] == 'SALIDA');
             $data_json = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
         ?>
@@ -337,9 +845,9 @@ $res_hist = mysqli_query($conn, $sql_hist);
                 <div style="flex:1;">
                     <div class="h-name">
                         <?php if($is_out): ?>
-                            <i class="fa-solid fa-arrow-left" style="color:var(--h-dark); margin-right:8px;"></i>
+                            <span class="h-badge-out">SALIDA</span>
                         <?php else: ?>
-                            <i class="fa-solid fa-arrow-right" style="color:var(--h-gold); margin-right:8px;"></i>
+                            <span class="h-badge-in">INGRESO</span>
                         <?php endif; ?>
                         <?php echo explode(' ', $row['nombre_conductor'])[0]; ?>
                     </div>
@@ -404,10 +912,10 @@ $res_hist = mysqli_query($conn, $sql_hist);
         btnVis.classList.remove('active-gold', 'active-black');
 
         if(type === 'VISITA') {
-            btnVis.classList.add('active-black'); 
+            btnVis.classList.add('active-black');
             if(box) box.style.display = 'block';
         } else {
-            btnPerm.classList.add('active-gold'); 
+            btnPerm.classList.add('active-gold');
             if(box) box.style.display = 'none';
         }
     }
@@ -416,7 +924,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     function showHistoryDetails(jsonStr) {
         const data = JSON.parse(jsonStr);
         const color = (data.tipo_movimiento === 'INGRESO') ? '#c5a059' : '#1a1c1e';
-        
+
         let html = `
             <div class="det-row"><span class="det-label">MOVIMIENTO</span> <span class="det-val" style="color:${color}; font-weight:800;">${data.tipo_movimiento}</span></div>
             <div class="det-row"><span class="det-label">NOMBRE</span> <span class="det-val">${data.nombre_conductor}</span></div>
