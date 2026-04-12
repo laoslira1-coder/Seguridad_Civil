@@ -4,11 +4,7 @@ if (!isset($_SESSION['usuario'])) { header("Location: index.php"); exit(); }
 
 // 1. LÓGICA DE UBICACIÓN
 if (isset($_POST['set_ubicacion'])) {
-    // Guardamos la ubicación en la sesión
     $_SESSION['ubicacion_actual'] = $_POST['ubicacion_selected'];
-    
-    // CORRECCIÓN: Recargamos ESTA MISMA página para mostrar el panel (dashboard)
-    // No redirigimos a control_garita.php automáticamente.
     header("Location: control_garita_principal.php");
     exit();
 }
@@ -16,7 +12,6 @@ if (isset($_POST['set_ubicacion'])) {
 $nombre_usuario = isset($_SESSION['usuario']) ? $_SESSION['usuario'] : 'OPERADOR';
 $ubicacion_actual = isset($_SESSION['ubicacion_actual']) ? $_SESSION['ubicacion_actual'] : 'NO DEFINIDO';
 
-// Si no está definido, mostramos modal al cargar.
 $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
 ?>
 
@@ -25,245 +20,341 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#F4F4F4">
     <title>Control de Acceso | Seguridad Civil</title>
-    
-    <!-- FUENTES IDÉNTICAS A PANEL.PHP -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/logo4.png"/>
     <style>
-        /* --- VARIABLES DEL TEMA --- */
-        :root { 
-            --h-gold: #c5a059; 
-            --h-dark: #1a1c1e; 
-            --h-gray-bg: #f4f4f7; 
-            --h-white: #ffffff; 
-            --text-700: #1e293b;
-            --text-500: #475569;
-            --text-300: #94a3b8;
-            --radius-lg: 24px;
-            --radius-md: 16px;
+        :root {
+            --g: #C49A2C;
+            --gd: #8A6A14;
+            --gl: #FBF6E8;
+            --gr: rgba(196,154,44,.15);
+            --g-grad: linear-gradient(135deg,#7A5A0E,#C49A2C,#E8C85A);
+            --ink: #0A0A0A;
+            --ink2: #1A1A1A;
+            --ink3: #3A3A3A;
+            --ink4: #666666;
+            --ink5: #999999;
+            --ink6: #BBBBBB;
+            --bg: #F4F4F4;
+            --surf: #FFFFFF;
+            --surf2: #FAFAFA;
+            --b: rgba(0,0,0,.08);
+            --b-gold: rgba(196,154,44,.3);
+            --red: #DC2626;
+            --green: #16A34A;
+            --gb: #F0FDF4;
+            --gbo: #86EFAC;
+            --font: 'Inter', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 16px;
+            --r-xl: 20px;
+            --r-2xl: 24px;
         }
 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { height: 100%; -webkit-text-size-adjust: 100%; }
         body {
-            margin: 0;
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--h-gray-bg);
-            color: var(--text-700);
-            min-height: 100vh;
+            font-family: var(--font);
+            font-size: 14px;
+            line-height: 1.5;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
+            -webkit-font-smoothing: antialiased;
             -webkit-tap-highlight-color: transparent;
         }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: var(--font); border: none; cursor: pointer; background: none; }
 
-        /* --- HEADER --- */
-        .header-main { 
-            background: var(--h-white); 
-            padding: 15px 20px; 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+        /* ═══ TOPBAR ═══ */
+        .topbar {
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 200;
+            background: rgba(255,255,255,.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(0,0,0,.07);
+            box-shadow: 0 1px 0 rgba(255,255,255,1), 0 2px 16px rgba(0,0,0,.05);
+        }
+        .topbar-inner {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 16px;
             height: 60px;
-        }
-
-        .header-left { flex: 1; }
-        .btn-back-panel {
-            color: var(--text-500);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-        .btn-back-panel:hover { color: var(--h-gold); transform: translateX(-3px); }
-
-        .header-center {
-            flex: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-        }
-        .logo-img { 
-            height: 45px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .header-right { flex: 1; display: flex; justify-content: flex-end; }
-        .btn-logout {
-            color: var(--text-300);
-            font-size: 20px;
-            transition: 0.3s;
-            text-decoration: none;
-        }
-        .btn-logout:hover { color: #ef4444; transform: scale(1.1); }
-
-        @media (max-width: 480px) {
-            .btn-back-panel span { display: none; } 
-            .btn-back-panel i { font-size: 18px; }
-            .logo-img { height: 35px; }
-            .header-main { padding: 10px 15px; }
-        }
-
-        /* --- CONTENIDO --- */
-        .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            flex: 1; 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-
-        /* BARRA DE CONTEXTO */
-        .context-card {
-            background: var(--h-white);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            border: 1px solid #edf2f7;
-        }
-
-        .context-info {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .context-icon {
-            width: 40px; height: 40px;
-            background: rgba(197, 160, 89, 0.1);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--h-gold);
-            font-size: 18px;
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink4);
+            padding: 7px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--b);
+            background: var(--surf);
+            transition: all .2s;
+            flex-shrink: 0;
         }
-        .context-text h4 { margin: 0; font-size: 11px; color: var(--text-300); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-        .context-text h2 { margin: 2px 0 0; font-size: 14px; color: var(--text-700); font-weight: 700; text-transform: uppercase; }
+        .btn-back:hover { color: var(--g); border-color: var(--b-gold); background: var(--gl); transform: translateX(-2px); }
+        .btn-back i { font-size: 11px; }
 
-        .btn-change {
-            background: var(--h-dark);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 30px;
+        .topbar-logos {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar-logo { height: 32px; width: auto; object-fit: contain; }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--ink4);
+            padding: 6px 12px;
+            border: 1px solid var(--b);
+            border-radius: var(--r-sm);
+            background: var(--surf);
+            transition: all .2s;
+            flex-shrink: 0;
+        }
+        .btn-logout:hover { color: var(--red); border-color: rgba(252,165,165,.4); background: #FEF2F2; }
+        .btn-logout svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+        .topbar-gold { height: 2px; background: linear-gradient(90deg, #0A0A0A 0%, #C49A2C 20%, #E8C85A 50%, #C49A2C 80%, transparent 100%); opacity: .7; }
+
+        /* ═══ MAIN ═══ */
+        .main-wrap {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 18px 14px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* ═══ CONTEXT CARD (Ubicación) ═══ */
+        .ctx-card {
+            background: var(--surf);
+            border: 1px solid rgba(0,0,0,.07);
+            border-radius: var(--r-2xl);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 16px rgba(0,0,0,.06);
+        }
+        .ctx-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #0A0A0A 0%, #C49A2C 35%, #E8C85A 60%, transparent 100%);
+            border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+        }
+        .ctx-ico {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            background: var(--gl);
+            border: 1px solid var(--b-gold);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--gd);
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .ctx-info { flex: 1; min-width: 0; }
+        .ctx-label { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink5); margin-bottom: 2px; }
+        .ctx-value { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -.2px; }
+        .ctx-btn {
             font-size: 10px;
             font-weight: 700;
-            cursor: pointer;
+            color: var(--ink4);
+            padding: 7px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--b);
+            background: var(--surf2);
+            transition: all .2s;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: 0.3s;
+            letter-spacing: .5px;
+            flex-shrink: 0;
         }
-        .btn-change:hover { background: var(--h-gold); transform: translateY(-2px); }
+        .ctx-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); transform: translateY(-1px); }
 
-        .section-heading {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: var(--text-300);
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            margin: 10px 0 15px 5px;
+        /* ═══ SECTION LABEL ═══ */
+        .sec-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 2px;
+            margin-top: 4px;
         }
+        .sec-txt { font-size: 9px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+        .sec-line { flex: 1; height: 1px; background: rgba(0,0,0,.1); }
 
-        /* --- MENÚ --- */
-        .menu-list { display: flex; flex-direction: column; gap: 12px; }
-        
-        .menu-item { 
-            display: flex; align-items: center; 
-            background: var(--h-white); padding: 20px; 
-            border-radius: var(--radius-md); 
-            text-decoration: none; border: 1px solid #edf2f7;
-            transition: 0.3s ease;
+        /* ═══ MODULE CARDS ═══ */
+        .mod-list { display: flex; flex-direction: column; gap: 7px; }
+
+        .mcard {
+            background: var(--surf);
+            border: 1px solid rgba(0,0,0,.07);
+            border-radius: var(--r-xl);
+            display: flex;
+            overflow: hidden;
             cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+            transition: transform .22s, box-shadow .22s, border-color .22s;
+            position: relative;
+        }
+        .mcard:hover { border-color: var(--b-gold); box-shadow: 0 4px 16px rgba(196,154,44,.12); transform: translateX(2px); }
+        .mcard:active { transform: scale(.98); }
+
+        .mcard-accent { width: 3px; flex-shrink: 0; border-radius: var(--r-xl) 0 0 var(--r-xl); }
+        .mcard-body { flex: 1; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+        .mcard-ico {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,.07);
+        }
+        .mcard-text { flex: 1; min-width: 0; }
+        .mcard-t { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.25; }
+        .mcard-s { font-size: 10px; color: var(--ink4); margin-top: 2px; }
+        .mcard-arr { margin-left: auto; color: #D8D4CE; font-size: 14px; transition: all .2s; flex-shrink: 0; }
+        .mcard:hover .mcard-arr { color: var(--g); transform: translateX(3px); }
+
+        .mcard-badge {
+            font-size: 7px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            position: absolute;
+            top: 10px;
+            right: 14px;
         }
 
-        .menu-item:hover { 
-            border-color: var(--h-gold); 
-            transform: translateY(-2px); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+        /* ═══ FOOTER ═══ */
+        .footer-wrap {
+            margin-top: auto;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
         }
+        .footer-text { font-size: 8px; font-weight: 600; letter-spacing: 2.5px; color: var(--ink6); text-transform: uppercase; }
+        .footer-gold { color: var(--g); }
 
-        .icon-box { 
-            width: 50px; height: 50px; 
-            background: #f8fafc; border-radius: 14px; 
-            display: flex; justify-content: center; align-items: center; 
-            margin-right: 18px; flex-shrink: 0;
-            transition: 0.3s;
-            color: var(--h-gold);
-            font-size: 22px; 
-        }
-        
-        .menu-item:hover .icon-box { background: var(--h-gold); color: white; }
-
-        .text-box { flex: 1; }
-        .text-box h3 { margin: 0; font-size: 15px; color: var(--text-700); font-weight: 700; }
-        .text-box p { margin: 2px 0 0; font-size: 12px; color: var(--text-500); font-weight: 400; }
-
-        .chevron { color: #cbd5e1; font-size: 14px; }
-
-        .footer { background: #f1f5f9; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; border-top: 1px solid #e2e8f0; }
-        .footer-text { font-size: 10px; color: #94a3b8; letter-spacing: 2px; font-weight: 700; }
-
-        /* --- MODAL --- */
+        /* ═══ MODAL ═══ */
         .modal-overlay {
-            display: none; 
+            display: none;
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(26, 28, 30, 0.6); 
+            background: rgba(0,0,0,.5);
             backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 9999;
-            align-items: center; 
+            align-items: center;
             justify-content: center;
         }
-
         @media (max-width: 480px) {
             .modal-overlay { align-items: flex-end; }
-            .modal-content { border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin: 0; width: 100%; }
+            .modal-content { border-radius: var(--r-2xl) var(--r-2xl) 0 0 !important; max-width: 100% !important; width: 100% !important; }
         }
 
         .modal-content {
-            background: var(--h-white);
+            background: var(--surf);
             width: 90%;
-            max-width: 450px;
-            border-radius: var(--radius-lg);
-            padding: 30px;
+            max-width: 420px;
+            border-radius: var(--r-2xl);
+            padding: 32px 24px;
             text-align: center;
-            animation: slideIn 0.3s ease-out;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: modalIn 0.3s ease-out;
+            box-shadow: 0 24px 80px rgba(0,0,0,.2);
+            position: relative;
+            overflow: hidden;
         }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--g-grad);
+            border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+        }
+        @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .modal-title { font-size: 16px; font-weight: 800; color: var(--text-700); text-transform: uppercase; margin-bottom: 25px; font-family: 'Inter', sans-serif; }
+        .modal-icon {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            background: var(--gl);
+            border: 1px solid var(--b-gold);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            color: var(--gd);
+            font-size: 24px;
+        }
+        .modal-title { font-size: 16px; font-weight: 800; color: var(--ink); margin-bottom: 6px; letter-spacing: -.2px; }
+        .modal-sub { font-size: 11px; color: var(--ink5); margin-bottom: 24px; }
 
-        .location-option {
-            background: var(--h-gray-bg);
-            border: 1px solid #e2e8f0;
-            padding: 18px;
-            border-radius: var(--radius-md);
+        .loc-option {
+            background: var(--surf2);
+            border: 1px solid rgba(0,0,0,.08);
+            padding: 16px 18px;
+            border-radius: var(--r-lg);
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             cursor: pointer;
-            display: flex; align-items: center; gap: 15px;
-            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all .22s;
             text-align: left;
-            color: var(--text-700);
-            width: 100%;
+            color: var(--ink);
+            font-family: var(--font);
+            font-size: 14px;
         }
-        
-        .location-option:hover { background: #fff; border-color: var(--h-gold); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .location-option i { color: var(--text-300); font-size: 20px; width: 30px; text-align: center; }
-        .location-option:hover i { color: var(--h-gold); }
-        .location-option span { font-weight: 700; font-size: 13px; text-transform: uppercase; }
+        .loc-option:hover { background: var(--surf); border-color: var(--b-gold); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(196,154,44,.12); }
+        .loc-option:active { transform: scale(.98); }
 
+        .loc-ico {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .loc-text { flex: 1; }
+        .loc-name { font-weight: 700; font-size: 13px; letter-spacing: .2px; }
+        .loc-desc { font-size: 10px; color: var(--ink5); margin-top: 1px; }
+        .loc-arr { color: #D8D4CE; font-size: 14px; transition: all .2s; }
+        .loc-option:hover .loc-arr { color: var(--g); transform: translateX(3px); }
+
+        .modal-footer-text { margin-top: 16px; font-size: 8px; color: var(--ink6); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -271,131 +362,146 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
     <!-- MODAL DE SELECCIÓN DE PUNTO DE CONTROL -->
     <div id="modalLocation" class="modal-overlay">
         <div class="modal-content">
+            <div class="modal-icon"><i class="fa-solid fa-location-dot"></i></div>
             <h2 class="modal-title">Seleccione Punto de Control</h2>
-            
+            <p class="modal-sub">Elija la ubicación donde operará durante su turno</p>
+
             <form method="POST">
                 <input type="hidden" name="set_ubicacion" value="1">
-                
-                <!-- OPCIÓN 1: GARITA PRINCIPAL -->
-                <!-- Al hacer clic, se envía el formulario, se guarda la sesión y se recarga esta página mostrando el panel -->
-                <button type="submit" name="ubicacion_selected" value="GARITA PRINCIPAL" class="location-option">
-                    <i class="fa-solid fa-tower-observation"></i>
-                    <span>GARITA PRINCIPAL</span>
+
+                <button type="submit" name="ubicacion_selected" value="GARITA PRINCIPAL" class="loc-option">
+                    <div class="loc-ico" style="background: var(--gl); color: var(--gd);"><i class="fa-solid fa-tower-observation"></i></div>
+                    <div class="loc-text">
+                        <div class="loc-name">Garita Principal</div>
+                        <div class="loc-desc">Control vehicular y peatonal</div>
+                    </div>
+                    <div class="loc-arr"><i class="fa-solid fa-chevron-right"></i></div>
                 </button>
 
-                <!-- OPCIÓN 2: BOCAMINA (EN DESARROLLO) -->
-                <!-- type="button" evita que se envíe el formulario. No pasa nada más que la alerta. -->
-                <button type="button" class="location-option" onclick="alert('Módulo en Desarrollo.\nPróximamente disponible.');">
-                    <i class="fa-solid fa-mountain-sun"></i>
-                    <span>BOCAMINA / INTERIOR</span>
+                <button type="button" class="loc-option" onclick="alert('Módulo en Desarrollo.\nPróximamente disponible.');">
+                    <div class="loc-ico" style="background: var(--gb); color: var(--green);"><i class="fa-solid fa-mountain-sun"></i></div>
+                    <div class="loc-text">
+                        <div class="loc-name">Bocamina / Interior</div>
+                        <div class="loc-desc">Control de acceso interior mina</div>
+                    </div>
+                    <span class="mcard-badge" style="background: var(--gb); color: var(--green); position: static;">Pronto</span>
                 </button>
             </form>
-            <div style="margin-top:20px; font-size:10px; color:#94a3b8; font-weight:700;">SEGURIDAD CIVIL • HOCHSCHILD</div>
+            <div class="modal-footer-text">Seguridad Civil · Hochschild</div>
         </div>
     </div>
 
-    <nav class="header-main">
-        <div class="header-left">
-            <a href="panel.php" class="btn-back-panel">
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a href="panel.php" class="btn-back">
                 <i class="fa-solid fa-chevron-left"></i>
-                <span>VOLVER</span>
+                <span>Volver</span>
             </a>
-        </div>
-        
-        <div class="header-center">
-            <img src="Assets Index/logo.png" alt="Logo" class="logo-img">
-            <img src="Assets Index/seguridadcivil.png" alt="Seguridad Civil" class="logo-img">
-        </div>
-
-        <div class="header-right">
-            <a href="logout.php" class="btn-logout" title="Cerrar Sesión"><i class="fa-solid fa-power-off"></i></a>
-        </div>
-    </nav>
-
-    <div class="container">
-
-        <!-- TARJETA DE CONTEXTO (UBICACIÓN ACTUAL) -->
-        <div class="context-card">
-            <div class="context-info">
-                <div class="context-icon">
-                    <i class="fa-solid fa-location-dot"></i>
-                </div>
-                <div class="context-text">
-                    <h4>Ubicación Actual</h4>
-                    <h2><?php echo htmlspecialchars($ubicacion_actual); ?></h2>
-                </div>
+            <div class="topbar-logos">
+                <img src="Assets Index/logo.png" alt="Logo" class="topbar-logo">
+                <img src="Assets Index/seguridadcivil.png" alt="Seguridad Civil" class="topbar-logo">
             </div>
-            <!-- Botón para reabrir el modal y cambiar ubicación -->
-            <button class="btn-change" onclick="abrirModal()">Cambiar</button>
-        </div>
-
-        <div class="section-heading">Gestión Operativa</div>
-
-        <div class="menu-list">
-            <!-- BOTÓN AHORA SÍ LLEVA AL FORMULARIO DE VEHÍCULOS -->
-            <a href="control_garita.php" class="menu-item">
-                <div class="icon-box">
-                    <i class="fa-solid fa-tower-observation"></i>
-                </div>
-                <div class="text-box">
-                    <h3>Control de Garita Principal</h3>
-                    <p>Registro de unidades, conductores y acompañantes.</p>
-                </div>
-                <i class="fa-solid fa-chevron-right chevron"></i>
+            <a href="logout.php" class="btn-logout">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Salir
             </a>
         </div>
-
-        <div class="section-heading">Control Auxiliar</div>
-
-        <div class="menu-list">
-            <!-- MÓDULO PERSONAL -->
-            <a href="control_personal.php" class="menu-item">
-                <div class="icon-box">
-                    <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <div class="text-box">
-                    <h3>Personal y Visitas</h3>
-                    <p>Registro de acceso peatonal y contratistas.</p>
-                </div>
-                <i class="fa-solid fa-chevron-right chevron"></i>
-            </a>
-
-            <!-- MÓDULO NOVEDADES -->
-            <a href="#" onclick="alert('Módulo en construcción')" class="menu-item">
-                <div class="icon-box" style="color:var(--text-300);">
-                    <i class="fa-solid fa-book"></i>
-                </div>
-                <div class="text-box">
-                    <h3>Cuaderno de Novedades</h3>
-                    <p>Registro digital del turno actual.</p>
-                </div>
-                <i class="fa-solid fa-lock chevron"></i>
-            </a>
-        </div>
-
+        <div class="topbar-gold"></div>
     </div>
 
-    <footer class="footer">
-        <div class="footer-text">CONTROL DE ACCESO INTEGRAL</div>
-        <div class="footer-text" style="color:var(--h-gold);">HOCHSCHILD MINING • 2026</div>
-    </footer>
+    <div class="main-wrap">
+
+        <!-- CONTEXT CARD -->
+        <div class="ctx-card">
+            <div class="ctx-ico"><i class="fa-solid fa-location-dot"></i></div>
+            <div class="ctx-info">
+                <div class="ctx-label">Ubicación Actual</div>
+                <div class="ctx-value"><?php echo htmlspecialchars($ubicacion_actual); ?></div>
+            </div>
+            <button class="ctx-btn" onclick="abrirModal()">Cambiar</button>
+        </div>
+
+        <!-- GESTIÓN OPERATIVA -->
+        <div class="sec-row">
+            <span class="sec-txt">Gestión Operativa</span>
+            <div class="sec-line"></div>
+        </div>
+
+        <div class="mod-list">
+            <a href="control_garita.php" class="mcard">
+                <div class="mcard-accent" style="background: var(--g);"></div>
+                <div class="mcard-body">
+                    <div class="mcard-ico" style="background: var(--gl); color: var(--gd);">
+                        <i class="fa-solid fa-tower-observation"></i>
+                    </div>
+                    <div class="mcard-text">
+                        <div class="mcard-t">Control de Garita Principal</div>
+                        <div class="mcard-s">Registro de unidades, conductores y acompañantes</div>
+                    </div>
+                    <div class="mcard-arr"><i class="fa-solid fa-chevron-right"></i></div>
+                </div>
+            </a>
+        </div>
+
+        <!-- CONTROL AUXILIAR -->
+        <div class="sec-row" style="margin-top: 4px;">
+            <span class="sec-txt">Control Auxiliar</span>
+            <div class="sec-line"></div>
+        </div>
+
+        <div class="mod-list">
+            <a href="control_personal.php" class="mcard">
+                <div class="mcard-accent" style="background: var(--ink);"></div>
+                <div class="mcard-body">
+                    <div class="mcard-ico" style="background: var(--surf2); color: var(--ink);">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="mcard-text">
+                        <div class="mcard-t">Personal y Visitas</div>
+                        <div class="mcard-s">Registro de acceso peatonal y contratistas</div>
+                    </div>
+                    <div class="mcard-arr"><i class="fa-solid fa-chevron-right"></i></div>
+                </div>
+            </a>
+
+            <a href="#" onclick="alert('Módulo en construcción')" class="mcard">
+                <div class="mcard-accent" style="background: var(--ink5);"></div>
+                <div class="mcard-body">
+                    <div class="mcard-ico" style="background: var(--bg); color: var(--ink5);">
+                        <i class="fa-solid fa-book"></i>
+                    </div>
+                    <div class="mcard-text">
+                        <div class="mcard-t">Cuaderno de Novedades</div>
+                        <div class="mcard-s">Registro digital del turno actual</div>
+                    </div>
+                    <div class="mcard-arr"><i class="fa-solid fa-chevron-right"></i></div>
+                </div>
+                <span class="mcard-badge" style="background: var(--bg); color: var(--ink5);">Pronto</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer-wrap">
+        <div class="footer-text">Control de Acceso Integral</div>
+        <div class="footer-text footer-gold">Hochschild Mining · 2026</div>
+    </div>
 
     <script>
         const modal = document.getElementById('modalLocation');
-        // Si no está definida la ubicación, forzamos mostrar el modal
         const show = <?php echo $mostrar_modal; ?>;
 
-        if(show) { 
-            modal.style.display = 'flex'; 
+        if(show) {
+            modal.style.display = 'flex';
         }
 
         function abrirModal() {
             modal.style.display = 'flex';
         }
-        
-        // Cierra el modal si se hace clic fuera del contenido (solo si ya hay ubicación definida)
+
         window.onclick = function(event) {
-            if (event.target == modal && !show) { 
+            if (event.target == modal && !show) {
                 modal.style.display = "none";
             }
         }
