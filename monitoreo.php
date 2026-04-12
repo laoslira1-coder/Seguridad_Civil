@@ -85,7 +85,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SITRAN | Centro de Monitoreo Profesional</title>
+    <title>SINTEGRA | Centro de Monitoreo Profesional</title>
     <!-- FUENTES E ICONOS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -596,7 +596,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 <header class="header-main">
     <div class="brand">
         <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
-        <span class="brand-text">SITRAN MASTER MONITOR</span>
+        <span class="brand-text">SINTEGRA MASTER MONITOR</span>
     </div>
     <div class="header-right">
         <div class="header-user">
@@ -694,7 +694,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        <tr><td colspan="7" style="text-align:center; padding:100px; color:var(--ink5); font-size:13px; font-weight:500;">Sincronizando con estacion garita SITRAN...</td></tr>
+                        <tr><td colspan="7" style="text-align:center; padding:100px; color:var(--ink5); font-size:13px; font-weight:500;">Sincronizando con estacion garita SINTEGRA...</td></tr>
                     </tbody>
                 </table>
             </div>

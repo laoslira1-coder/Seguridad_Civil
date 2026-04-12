@@ -382,7 +382,7 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
     <header class="header-main">
         <div class="brand">
             <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
-            <span class="brand-text">SITRAN MASTER MONITOR</span>
+            <span class="brand-text">SINTEGRA SISTEMA DE CONTROL INTEGRADO</span>
         </div>
         <div class="header-right">
             <div class="header-user">

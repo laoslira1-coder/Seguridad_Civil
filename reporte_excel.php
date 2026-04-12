@@ -4,7 +4,7 @@ if (!isset($_SESSION['usuario'])) { header("Location: index.php"); exit(); }
 
 // 1. CONFIGURACIÓN DE HEADERS PARA EXCEL
 header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-header("Content-Disposition: attachment; filename=Reporte_SITRAN_" . date('Y-m-d_H-i') . ".xls");
+header("Content-Disposition: attachment; filename=Reporte_SINTEGRA_" . date('Y-m-d_H-i') . ".xls");
 header("Pragma: no-cache");
 header("Expires: 0");
 
@@ -67,7 +67,7 @@ $resultado = mysqli_query($conn, $sql);
     <thead>
         <tr>
             <th colspan="24" style="background-color: #fff; color: #000; border: none; font-size: 16px;">
-                REPORTE GENERAL DE CONTROL DE ACCESOS - SITRAN
+                REPORTE GENERAL DE CONTROL DE ACCESOS - SINTEGRA
             </th>
         </tr>
         <tr>

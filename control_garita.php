@@ -312,7 +312,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SITRAN | Control Integral</title>
+    <title>SINTEGRA | Control Integral</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -1227,7 +1227,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
 <header class="header-main">
     <div class="brand">
         <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
-        <span class="brand-text">SITRAN MASTER MONITOR</span>
+        <span class="brand-text">SINTEGRA SISTEMA DE CONTROL INTEGRADO</span>
     </div>
     <div class="header-right">
         <a href="reporte_excel.php" target="_blank" class="header-data"><i class="fa-solid fa-table-columns"></i> DATA</a>

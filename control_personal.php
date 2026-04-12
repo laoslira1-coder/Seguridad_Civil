@@ -110,7 +110,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F4F4F4">
-    <title>Control Personal | SITRAN</title>
+    <title>Control Personal | SINTEGRA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -733,7 +733,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
 <header class="header-main">
     <div class="brand">
         <img src="Assets Index/logo.png" alt="Logo" onerror="this.style.display='none';">
-        <span class="brand-text">SITRAN MASTER MONITOR</span>
+        <span class="brand-text">SINTEGRA SISTEMA DE CONTROL INTEGRADO</span>
     </div>
     <div class="header-right">
         <div class="header-user">

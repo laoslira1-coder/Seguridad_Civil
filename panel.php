@@ -40,7 +40,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F4F4F4">
-    <title>Panel SITRAN | Hochschild</title>
+    <title>Panel SINTEGRA | Hochschild</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -417,7 +417,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             <img src="Assets Index/logo.png" alt="Hochschild" class="logo-img">
             <div class="logo-sep"></div>
             <div class="logo-wordmark">
-                <span class="logo-name">SITRAN</span>
+                <span class="logo-name">SINTEGRA</span>
                 <span class="logo-sub">Sistema de Control Integrado</span>
             </div>
         </div>

@@ -1,6 +1,6 @@
 <?php
 // ==============================================================================
-// BUSCAR PERSONA Y LICENCIA - MOTOR TURBO OPTIMIZADO (SITRAN)
+// BUSCAR PERSONA Y LICENCIA - MOTOR TURBO OPTIMIZADO (SINTEGRA)
 // ==============================================================================
 error_reporting(0); // Evita que errores PHP rompan el formato JSON
 header('Content-Type: application/json; charset=utf-8');
