@@ -77,7 +77,7 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
         button { font-family: var(--font); border: none; cursor: pointer; background: none; }
 
         /* ═══ TOPBAR ═══ */
-        .topbar {
+        .header-main {
             position: sticky;
             top: 0;
             z-index: 200;
@@ -86,60 +86,35 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
             -webkit-backdrop-filter: blur(24px);
             border-bottom: 1px solid rgba(0,0,0,.07);
             box-shadow: 0 1px 0 rgba(255,255,255,1), 0 2px 16px rgba(0,0,0,.05);
-        }
-        .topbar-inner {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 16px;
+            padding: 0 20px;
             height: 60px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
         }
-        .btn-back {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink4);
-            padding: 7px 14px;
-            border-radius: var(--r-sm);
+        .header-main::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--ink), var(--g), var(--ink));
+        }
+        .header-user { text-align: left; }
+        .header-user-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .5px; }
+        .header-user-role { font-size: 9px; color: var(--ink5); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+        .header-home {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            color: var(--ink3);
+            font-size: 16px;
+            transition: all .25s;
             border: 1px solid var(--b);
-            background: var(--surf);
-            transition: all .2s;
-            flex-shrink: 0;
+            text-decoration: none;
         }
-        .btn-back:hover { color: var(--g); border-color: var(--b-gold); background: var(--gl); transform: translateX(-2px); }
-        .btn-back i { font-size: 11px; }
-
-        .topbar-logos {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-        }
-        .topbar-logo { height: 32px; width: auto; object-fit: contain; }
-
-        .btn-logout {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--ink4);
-            padding: 6px 12px;
-            border: 1px solid var(--b);
-            border-radius: var(--r-sm);
-            background: var(--surf);
-            transition: all .2s;
-            flex-shrink: 0;
-        }
-        .btn-logout:hover { color: var(--red); border-color: rgba(252,165,165,.4); background: #FEF2F2; }
-        .btn-logout svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
-
-        .topbar-gold { height: 2px; background: linear-gradient(90deg, #0A0A0A 0%, #C49A2C 20%, #E8C85A 50%, #C49A2C 80%, transparent 100%); opacity: .7; }
+        .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
         /* ═══ MAIN ═══ */
         .main-wrap {
@@ -392,23 +367,13 @@ $mostrar_modal = ($ubicacion_actual === 'NO DEFINIDO') ? 'true' : 'false';
     </div>
 
     <!-- TOPBAR -->
-    <div class="topbar">
-        <div class="topbar-inner">
-            <a href="panel.php" class="btn-back">
-                <i class="fa-solid fa-chevron-left"></i>
-                <span>Volver</span>
-            </a>
-            <div class="topbar-logos">
-                <img src="Assets Index/logo.png" alt="Logo" class="topbar-logo">
-                <img src="Assets Index/seguridadcivil.png" alt="Seguridad Civil" class="topbar-logo">
-            </div>
-            <a href="logout.php" class="btn-logout">
-                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Salir
-            </a>
+    <header class="header-main">
+        <div class="header-user">
+            <div class="header-user-name"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+            <div class="header-user-role">Command Center</div>
         </div>
-        <div class="topbar-gold"></div>
-    </div>
+        <a href="panel.php" class="header-home"><i class="fa-solid fa-house-chimney"></i></a>
+    </header>
 
     <div class="main-wrap">
 

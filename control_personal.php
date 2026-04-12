@@ -180,7 +180,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
             background: rgba(255,255,255,.97);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            padding: 0 16px;
+            padding: 0 20px;
             height: 60px;
             display: flex;
             justify-content: space-between;
@@ -195,25 +195,22 @@ $res_hist = mysqli_query($conn, $sql_hist);
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, var(--ink) 0%, var(--g) 20%, #E8C85A 50%, var(--g) 80%, transparent 100%);
-            opacity: .7;
+            background: linear-gradient(90deg, var(--ink), var(--g), var(--ink));
         }
-        .btn-back-top {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink4);
-            padding: 7px 14px;
-            border-radius: var(--r-sm);
+        .header-user { text-align: left; }
+        .header-user-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .5px; }
+        .header-user-role { font-size: 9px; color: var(--ink5); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+        .header-home {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            color: var(--ink3);
+            font-size: 16px;
+            transition: all .25s;
             border: 1px solid var(--b);
-            background: var(--surf);
-            transition: all .2s;
+            text-decoration: none;
         }
-        .btn-back-top:hover { color: var(--g); border-color: var(--b-gold); background: var(--gl); transform: translateX(-2px); }
-        .topbar-logos { display: flex; gap: 12px; align-items: center; }
-        .logo-header { height: 32px; width: auto; object-fit: contain; }
+        .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
         /* ═══ CONTAINER ═══ */
         .container { max-width: 480px; margin: 0 auto; padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -721,17 +718,13 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<nav class="header-main">
-    <a href="control_garita_principal.php" class="btn-back-top">
-        <i class="fa-solid fa-chevron-left" style="font-size:11px;"></i>
-        <span>Volver</span>
-    </a>
-    <div class="topbar-logos">
-        <img src="Assets Index/logo.png" class="logo-header">
-        <img src="Assets Index/seguridadcivil.png" class="logo-header">
+<header class="header-main">
+    <div class="header-user">
+        <div class="header-user-name"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+        <div class="header-user-role">Command Center</div>
     </div>
-    <div style="width:70px;"></div>
-</nav>
+    <a href="panel.php" class="header-home"><i class="fa-solid fa-house-chimney"></i></a>
+</header>
 
 <div class="container">
 

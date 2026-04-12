@@ -378,67 +378,40 @@ $res_hist = mysqli_query($conn, $sql_hist);
 
         /* ===== TOPBAR ===== */
         .header-main {
-            background: rgba(255,255,255,.72);
-            backdrop-filter: blur(24px) saturate(1.9);
-            -webkit-backdrop-filter: blur(24px) saturate(1.9);
-            padding: 0 24px;
+            background: rgba(255,255,255,.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 0 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            border-bottom: none;
+            border-bottom: 1px solid rgba(0,0,0,.07);
             position: sticky;
             top: 0;
             z-index: 1000;
-            height: 64px;
-            box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.03);
+            height: 60px;
+            box-shadow: 0 1px 0 rgba(255,255,255,1), 0 2px 16px rgba(0,0,0,.05);
         }
         .header-main::after {
             content: '';
             position: absolute;
-            bottom: 0;
+            bottom: -2px;
             left: 0;
             right: 0;
-            height: 3px;
-            background: var(--g-grad);
-            opacity: .85;
+            height: 2px;
+            background: linear-gradient(90deg, var(--ink), var(--g), var(--ink));
         }
-        .nav-left {
-            position: absolute;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .logo-container { display: flex; gap: 14px; align-items: center; }
-        .logo-header { height: 40px; transition: transform 0.3s var(--ease); filter: drop-shadow(0 1px 2px rgba(0,0,0,.08)); }
-        .logo-header:hover { transform: scale(1.06) translateY(-1px); }
-        .btn-back {
-            color: var(--ink);
-            font-size: 17px;
-            text-decoration: none;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .header-user { text-align: left; }
+        .header-user-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: .5px; }
+        .header-user-role { font-size: 9px; color: var(--ink5); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .header-data {
+            background: var(--ink);
+            color: var(--g);
+            padding: 8px 16px;
             border-radius: var(--radius-md);
-            transition: all .25s var(--ease);
-            background: transparent;
-            border: 1px solid transparent;
-        }
-        .btn-back:hover {
-            background: var(--gl);
-            border-color: var(--b-gold);
-            color: var(--gd);
-            box-shadow: var(--g-glow);
-        }
-        .nav-left a[href="reporte_excel.php"] {
-            background: var(--ink) !important;
-            color: var(--g) !important;
-            padding: 8px 16px !important;
-            border-radius: var(--radius-md) !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
+            font-size: 11px;
+            font-weight: 700;
             letter-spacing: .8px;
             transition: all .25s var(--ease);
             text-decoration: none;
@@ -447,11 +420,22 @@ $res_hist = mysqli_query($conn, $sql_hist);
             gap: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,.15);
         }
-        .nav-left a[href="reporte_excel.php"]:hover {
+        .header-data:hover {
             opacity: .9;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0,0,0,.2);
         }
+        .header-home {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            color: var(--ink3);
+            font-size: 16px;
+            transition: all .25s;
+            border: 1px solid var(--b);
+            text-decoration: none;
+        }
+        .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
         /* ===== LAYOUT ===== */
         .container {
@@ -1162,8 +1146,6 @@ $res_hist = mysqli_query($conn, $sql_hist);
         }
         @media (max-width: 480px) {
             .header-main { height: 56px; padding: 0 12px; }
-            .logo-header { height: 32px; }
-            .nav-left { left: 10px; gap: 8px; }
             .container { padding: 0 12px; }
             .card { padding: 20px; border-radius: var(--radius-lg); }
             .card::before { left: 20px; right: 20px; }
@@ -1231,18 +1213,16 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<nav class="header-main">
-    <div class="nav-left">
-        <a href="control_garita_principal.php" class="btn-back" title="Regresar"><i class="fa-solid fa-chevron-left"></i></a>
-        <a href="reporte_excel.php" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:7px;">
-            <i class="fa-solid fa-table-columns"></i> DATA
-        </a>
+<header class="header-main">
+    <div class="header-user">
+        <div class="header-user-name"><?php echo strtoupper($_SESSION['usuario']); ?></div>
+        <div class="header-user-role">Command Center</div>
     </div>
-    <div class="logo-container">
-        <img src="Assets Index/logo.png" class="logo-header" alt="Logo">
-        <img src="Assets Index/seguridadcivil.png" class="logo-header" alt="Seguridad Civil">
+    <div class="header-right">
+        <a href="reporte_excel.php" target="_blank" class="header-data"><i class="fa-solid fa-table-columns"></i> DATA</a>
+        <a href="panel.php" class="header-home"><i class="fa-solid fa-house-chimney"></i></a>
     </div>
-</nav>
+</header>
 
 <div class="container">
     
