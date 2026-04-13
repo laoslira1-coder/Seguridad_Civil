@@ -421,224 +421,308 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         }
 
         /* ═══ WELCOME OVERLAY ═══ */
-        /* ═══ WELCOME OVERLAY — CINEMATIC ═══ */
+        /* ═══ WELCOME OVERLAY v3 — RECOLSA STYLE ═══ */
         .welcome-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             z-index: 9999;
-            background: #050505;
+            background: #080808;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 60px;
             opacity: 1;
             overflow: hidden;
         }
         .welcome-overlay.phase-out {
-            animation: welcomeFadeOut .8s .2s ease forwards;
+            animation: wFadeOut .7s ease forwards;
         }
-        @keyframes welcomeFadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; pointer-events: none; }
-        }
+        @keyframes wFadeOut { to { opacity: 0; pointer-events: none; } }
 
-        /* Fondo radial dorado */
-        .w-bg-glow {
+        /* BG particles */
+        .w-dot {
             position: absolute;
-            width: 600px; height: 600px;
+            width: 3px; height: 3px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(196,154,44,.15) 0%, rgba(196,154,44,.05) 40%, transparent 70%);
-            top: 50%; left: 50%;
-            transform: translate(-50%,-50%) scale(0);
-            animation: glowExpand 2s .3s cubic-bezier(.22,1,.36,1) forwards;
+            background: rgba(196,154,44,.25);
+            animation: wDotFloat var(--d, 6s) var(--dl, 0s) ease-in-out infinite alternate;
         }
-        @keyframes glowExpand {
-            to { transform: translate(-50%,-50%) scale(1); }
-        }
-
-        /* Líneas horizontales decorativas */
-        .w-line {
-            position: absolute;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(196,154,44,.4), transparent);
-            top: 50%; left: 50%;
-            transform: translateX(-50%) scaleX(0);
-        }
-        .w-line-1 { width: 500px; margin-top: -80px; animation: lineReveal 1s .5s ease forwards; }
-        .w-line-2 { width: 500px; margin-top: 80px; animation: lineReveal 1s .7s ease forwards; }
-        .w-line-3 { width: 300px; margin-top: 120px; animation: lineReveal 1s .9s ease forwards; opacity: .4; }
-        @keyframes lineReveal {
-            to { transform: translateX(-50%) scaleX(1); }
+        @keyframes wDotFloat {
+            0% { transform: translateY(0) scale(.5); opacity: .15; }
+            100% { transform: translateY(var(--mv, -40px)) scale(1); opacity: .5; }
         }
 
-        /* Logo Hochschild */
-        .w-logo-container {
-            position: relative;
-            z-index: 2;
+        /* Grid pattern sutil */
+        .w-grid-bg {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(196,154,44,.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(196,154,44,.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* ── STEPPER (izquierda) ── */
+        .w-stepper {
             display: flex;
             flex-direction: column;
-            align-items: center;
             gap: 0;
+            z-index: 2;
         }
-        .w-logo-img {
-            width: 80px;
-            height: auto;
-            filter: brightness(0) invert(1);
+        .w-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            padding: 14px 0;
             opacity: 0;
-            transform: scale(.7);
-            animation: logoReveal .8s .4s cubic-bezier(.22,1,.36,1) forwards;
+            transform: translateX(-20px);
         }
-        @keyframes logoReveal {
-            to { opacity: 1; transform: scale(1); }
+        .w-step.visible {
+            animation: stepIn .4s ease forwards;
         }
+        @keyframes stepIn { to { opacity: 1; transform: translateX(0); } }
 
-        /* Anillo dorado alrededor del logo */
-        .w-logo-ring {
-            position: absolute;
-            top: -15px;
-            width: 110px; height: 110px;
+        .w-step-dot {
+            width: 32px; height: 32px;
             border-radius: 50%;
-            border: 1.5px solid transparent;
-            background: conic-gradient(from 0deg, transparent 0%, rgba(196,154,44,.6) 25%, transparent 50%, rgba(196,154,44,.6) 75%, transparent 100%) border-box;
-            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0;
-            animation: ringReveal 1.2s .6s ease forwards, ringSpin 4s 1s linear infinite;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+            transition: all .4s ease;
         }
-        @keyframes ringReveal { to { opacity: .7; } }
-        @keyframes ringSpin { to { transform: rotate(360deg); } }
-
-        /* Texto SINTEGRA */
-        .w-brand {
-            margin-top: 28px;
+        .w-step-dot.pending {
+            background: rgba(255,255,255,.06);
+            border: 1.5px solid rgba(255,255,255,.12);
+            color: rgba(255,255,255,.25);
+        }
+        .w-step-dot.active {
+            background: rgba(196,154,44,.15);
+            border: 1.5px solid rgba(196,154,44,.5);
+            color: #C49A2C;
+            box-shadow: 0 0 16px rgba(196,154,44,.25);
+        }
+        .w-step-dot.done {
+            background: #C49A2C;
+            border: 1.5px solid #C49A2C;
+            color: #fff;
+        }
+        .w-step-label {
             font-family: var(--font);
-            font-size: 38px;
-            font-weight: 900;
-            letter-spacing: 14px;
-            text-indent: 14px;
-            background: linear-gradient(135deg, #B8860B, #E8C85A, #FFD700, #E8C85A, #B8860B);
-            background-size: 300% 100%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: textUp .7s .8s ease forwards, goldShimmer 3s 1.5s ease infinite;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,.25);
+            letter-spacing: .5px;
+            transition: all .4s ease;
         }
-        .w-subtitle {
+        .w-step.visible .w-step-label { color: rgba(255,255,255,.7); }
+        .w-step.done-step .w-step-label { color: rgba(196,154,44,.9); }
+
+        /* Línea conectora vertical */
+        .w-step::before {
+            content: '';
+            position: absolute;
+            left: 15.5px;
+            top: -1px;
+            width: 1.5px;
+            height: 14px;
+            background: rgba(255,255,255,.08);
+        }
+        .w-step:first-child::before { display: none; }
+        .w-step.done-step::before { background: rgba(196,154,44,.4); }
+
+        /* ── CARD (derecha) ── */
+        .w-card {
+            width: 420px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 20px;
+            overflow: hidden;
+            z-index: 2;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(0,0,0,.4), 0 0 80px rgba(196,154,44,.05);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardUp .6s .3s ease forwards;
+        }
+        @keyframes cardUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* Gold line top */
+        .w-card-gold {
+            height: 3px;
+            background: linear-gradient(90deg, transparent 5%, #C49A2C 30%, #FFD700 50%, #C49A2C 70%, transparent 95%);
+        }
+
+        /* Logo area */
+        .w-card-logo {
+            padding: 32px 32px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .w-card-logo img {
+            height: 45px;
+            filter: brightness(0) invert(1);
+            opacity: .9;
+        }
+        .w-card-logo-sub {
+            margin-top: 10px;
             font-family: var(--font);
             font-size: 10px;
             font-weight: 600;
-            letter-spacing: 6px;
-            text-indent: 6px;
+            letter-spacing: 5px;
             text-transform: uppercase;
-            color: rgba(255,255,255,.35);
-            margin-top: 6px;
-            opacity: 0;
-            animation: textUp .6s 1s ease forwards;
+            color: rgba(255,255,255,.3);
         }
 
-        /* Separador dorado */
-        .w-divider {
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #C49A2C, transparent);
-            margin-top: 24px;
-            opacity: 0;
-            transform: scaleX(0);
-            animation: dividerIn .6s 1.2s ease forwards;
+        /* User area */
+        .w-card-user {
+            padding: 28px 32px;
         }
-        @keyframes dividerIn {
-            to { opacity: 1; transform: scaleX(1); }
-        }
-
-        /* Bienvenido */
-        .w-welcome-text {
+        .w-card-welcome-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-family: var(--font);
-            font-size: 13px;
-            font-weight: 400;
-            color: rgba(255,255,255,.5);
-            letter-spacing: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            margin-top: 20px;
-            opacity: 0;
-            animation: textUp .6s 1.4s ease forwards;
+            color: #C49A2C;
+            margin-bottom: 16px;
         }
-        .w-user-name {
+        .w-card-welcome-tag i { font-size: 10px; }
+
+        .w-user-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .w-avatar {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #C49A2C, #D4AF37);
+            display: flex;
+            align-items: center; justify-content: center;
             font-family: var(--font);
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(196,154,44,.3);
+        }
+        .w-user-info h3 {
+            margin: 0;
+            font-family: var(--font);
+            font-size: 18px;
             font-weight: 700;
             color: #fff;
-            letter-spacing: 2px;
-            margin-top: 6px;
-            opacity: 0;
-            animation: textUp .6s 1.6s ease forwards;
+            letter-spacing: .5px;
+        }
+        .w-user-info span {
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,.4);
+            margin-top: 2px;
+            display: block;
         }
 
-        /* Barra de carga */
-        .w-loader {
-            position: absolute;
-            bottom: 60px;
-            width: 120px;
-            height: 2px;
-            background: rgba(255,255,255,.08);
-            border-radius: 2px;
+        /* Tags */
+        .w-tags {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+        .w-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255,255,255,.5);
+        }
+        .w-tag i { font-size: 10px; color: rgba(196,154,44,.7); }
+
+        /* Progress */
+        .w-progress {
+            padding: 20px 32px 14px;
+            border-top: 1px solid rgba(255,255,255,.06);
+        }
+        .w-progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .w-progress-label {
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255,255,255,.4);
+        }
+        .w-progress-pct {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: #C49A2C;
+        }
+        .w-progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,.06);
+            border-radius: 4px;
             overflow: hidden;
         }
-        .w-loader-bar {
+        .w-progress-bar {
             height: 100%;
-            width: 0;
+            width: 0%;
             background: linear-gradient(90deg, #C49A2C, #FFD700);
-            border-radius: 2px;
-            animation: loaderFill 2.8s .8s ease-in-out forwards;
+            border-radius: 4px;
+            transition: width .3s ease;
         }
-        @keyframes loaderFill {
-            0% { width: 0; }
-            100% { width: 100%; }
+        .w-progress-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            font-family: var(--font);
+            font-size: 11px;
+            color: rgba(196,154,44,.7);
+            font-weight: 500;
         }
+        .w-progress-status i {
+            font-size: 6px;
+            animation: wPulse 1s ease infinite;
+        }
+        @keyframes wPulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
 
-        /* Texto inferior */
-        .w-footer {
-            position: absolute;
-            bottom: 30px;
+        /* Footer de la card */
+        .w-card-footer {
+            padding: 14px 32px;
+            border-top: 1px solid rgba(255,255,255,.04);
+            text-align: center;
             font-family: var(--font);
             font-size: 9px;
             font-weight: 500;
-            letter-spacing: 3px;
-            color: rgba(255,255,255,.2);
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,.15);
             text-transform: uppercase;
-            opacity: 0;
-            animation: textUp .5s 1s ease forwards;
         }
 
-        @keyframes textUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes goldShimmer {
-            0%,100% { background-position: 0% 50%; }
-            50%     { background-position: 100% 50%; }
-        }
-
-        /* Partículas flotantes premium */
-        .w-particle {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-        }
-        .w-particle-gold {
-            background: radial-gradient(circle, rgba(232,200,90,.8), rgba(196,154,44,.3));
-            animation: pFloat var(--dur) var(--delay) ease-in-out infinite;
-        }
-        .w-particle-white {
-            background: radial-gradient(circle, rgba(255,255,255,.5), rgba(255,255,255,.1));
-            animation: pFloat var(--dur) var(--delay) ease-in-out infinite;
-        }
-        @keyframes pFloat {
-            0%   { opacity: 0; transform: translateY(0) scale(.3); }
-            15%  { opacity: 1; }
-            85%  { opacity: .6; }
-            100% { opacity: 0; transform: translateY(var(--travel)) scale(0); }
+        /* Mobile: stack vertical */
+        @media (max-width: 800px) {
+            .welcome-overlay { flex-direction: column; gap: 30px; padding: 30px; }
+            .w-stepper { flex-direction: row; flex-wrap: wrap; gap: 0; }
+            .w-step { padding: 8px 0; }
+            .w-step::before { display: none; }
+            .w-card { width: 100%; max-width: 380px; }
         }
 
         /* ═══ QUICK STATS STRIP ═══ */
@@ -718,32 +802,78 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
 </head>
 <body>
 
-<!-- WELCOME OVERLAY — CINEMATIC -->
+<!-- WELCOME OVERLAY v3 -->
 <div class="welcome-overlay" id="welcomeOverlay">
-    <!-- Background glow -->
-    <div class="w-bg-glow"></div>
-    <!-- Decorative lines -->
-    <div class="w-line w-line-1"></div>
-    <div class="w-line w-line-2"></div>
-    <div class="w-line w-line-3"></div>
+    <div class="w-grid-bg"></div>
 
-    <!-- Center content -->
-    <div class="w-logo-container">
-        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-            <div class="w-logo-ring"></div>
-            <img src="Assets Index/logo.png" alt="Hochschild Mining" class="w-logo-img">
+    <!-- Stepper izquierdo -->
+    <div class="w-stepper" id="wStepper">
+        <div class="w-step" data-delay="300">
+            <div class="w-step-dot pending" id="ws0"><i class="fa-solid fa-shield-check" style="font-size:13px;"></i></div>
+            <span class="w-step-label">Autenticación</span>
         </div>
-        <div class="w-brand">SINTEGRA</div>
-        <div class="w-subtitle">Sistema de Control Integrado</div>
-        <div class="w-divider"></div>
-        <div class="w-welcome-text">Bienvenido</div>
-        <div class="w-user-name"><?php echo htmlspecialchars($nombre_completo); ?></div>
+        <div class="w-step" data-delay="800">
+            <div class="w-step-dot pending" id="ws1"><i class="fa-solid fa-user-lock" style="font-size:11px;"></i></div>
+            <span class="w-step-label">Permisos y roles</span>
+        </div>
+        <div class="w-step" data-delay="1400">
+            <div class="w-step-dot pending" id="ws2"><i class="fa-solid fa-cubes" style="font-size:11px;"></i></div>
+            <span class="w-step-label">Módulos del sistema</span>
+        </div>
+        <div class="w-step" data-delay="2000">
+            <div class="w-step-dot pending" id="ws3"><i class="fa-solid fa-database" style="font-size:11px;"></i></div>
+            <span class="w-step-label">Base de datos</span>
+        </div>
+        <div class="w-step" data-delay="2500">
+            <div class="w-step-dot pending" id="ws4"><i class="fa-solid fa-sliders" style="font-size:11px;"></i></div>
+            <span class="w-step-label">Preferencias</span>
+        </div>
+        <div class="w-step" data-delay="3000">
+            <div class="w-step-dot pending" id="ws5"><i class="fa-solid fa-display" style="font-size:11px;"></i></div>
+            <span class="w-step-label">Interfaz lista</span>
+        </div>
     </div>
 
-    <!-- Loader bar -->
-    <div class="w-loader"><div class="w-loader-bar"></div></div>
-    <!-- Footer -->
-    <div class="w-footer">Hochschild Mining &bull; Seguridad Integral</div>
+    <!-- Card derecha -->
+    <div class="w-card">
+        <div class="w-card-gold"></div>
+
+        <div class="w-card-logo">
+            <img src="Assets Index/logo.png" alt="Hochschild Mining">
+            <div class="w-card-logo-sub">Sistema de Control Integrado</div>
+        </div>
+
+        <div class="w-card-user">
+            <div class="w-card-welcome-tag"><i class="fa-solid fa-sparkles"></i> BIENVENIDO DE VUELTA</div>
+            <div class="w-user-row">
+                <div class="w-avatar"><?php echo $iniciales; ?></div>
+                <div class="w-user-info">
+                    <h3><?php echo htmlspecialchars($nombre_completo); ?></h3>
+                    <span><?php echo htmlspecialchars($cargo_real); ?></span>
+                </div>
+            </div>
+            <div class="w-tags">
+                <div class="w-tag"><i class="fa-regular fa-clock"></i> Último acceso: <?php echo date('d M Y, H:i'); ?></div>
+                <div class="w-tag"><i class="fa-solid fa-shield-check"></i> Sesión verificada</div>
+            </div>
+        </div>
+
+        <div class="w-progress">
+            <div class="w-progress-header">
+                <span class="w-progress-label" id="wProgressLabel">Iniciando sistema...</span>
+                <span class="w-progress-pct" id="wProgressPct">0%</span>
+            </div>
+            <div class="w-progress-track">
+                <div class="w-progress-bar" id="wProgressBar"></div>
+            </div>
+            <div class="w-progress-status">
+                <i class="fa-solid fa-circle"></i>
+                <span id="wStatusText">Verificando credenciales...</span>
+            </div>
+        </div>
+
+        <div class="w-card-footer">&copy; 2026 Hochschild Mining &middot; Todos los derechos reservados</div>
+    </div>
 </div>
 
 <!-- TOPBAR -->
@@ -899,38 +1029,82 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
 </div>
 
 <script>
-// ═══ WELCOME OVERLAY — CINEMATIC ═══
+// ═══ WELCOME OVERLAY v3 ═══
 (function(){
     var overlay = document.getElementById('welcomeOverlay');
     if (!overlay) return;
-    if (sessionStorage.getItem('sintegra_welcomed')) {
-        overlay.remove();
-        return;
+
+    // Generar dots de fondo
+    for (var i = 0; i < 50; i++) {
+        var d = document.createElement('div');
+        d.className = 'w-dot';
+        d.style.left = Math.random()*100+'%';
+        d.style.top = Math.random()*100+'%';
+        d.style.setProperty('--d', (4+Math.random()*6)+'s');
+        d.style.setProperty('--dl', Math.random()*4+'s');
+        d.style.setProperty('--mv', -(20+Math.random()*50)+'px');
+        if(Math.random()>.6) d.style.width=d.style.height='2px';
+        overlay.insertBefore(d, overlay.firstChild);
     }
 
-    // Generar partículas premium (doradas + blancas)
-    for (var i = 0; i < 35; i++) {
-        var p = document.createElement('div');
-        var isGold = Math.random() > .3;
-        p.className = 'w-particle ' + (isGold ? 'w-particle-gold' : 'w-particle-white');
-        var size = 2 + Math.random() * 5;
-        p.style.width = size + 'px';
-        p.style.height = size + 'px';
-        p.style.left = (10 + Math.random() * 80) + '%';
-        p.style.top = (30 + Math.random() * 50) + '%';
-        p.style.setProperty('--dur', (2.5 + Math.random() * 2.5) + 's');
-        p.style.setProperty('--delay', (Math.random() * 3) + 's');
-        p.style.setProperty('--travel', '-' + (80 + Math.random() * 120) + 'px');
-        overlay.appendChild(p);
+    // Stepper sequence
+    var steps = document.querySelectorAll('.w-step');
+    var dots = [document.getElementById('ws0'),document.getElementById('ws1'),document.getElementById('ws2'),document.getElementById('ws3'),document.getElementById('ws4'),document.getElementById('ws5')];
+    var bar = document.getElementById('wProgressBar');
+    var pct = document.getElementById('wProgressPct');
+    var label = document.getElementById('wProgressLabel');
+    var status = document.getElementById('wStatusText');
+
+    var phases = [
+        { pct: 15, label: 'Verificando credenciales...', status: 'Autenticación en curso...' },
+        { pct: 32, label: 'Cargando permisos...', status: 'Obteniendo roles y niveles de acceso...' },
+        { pct: 55, label: 'Preparando módulos...', status: 'Cargando módulos del sistema...' },
+        { pct: 72, label: 'Conectando base de datos...', status: 'Sincronizando registros...' },
+        { pct: 88, label: 'Aplicando preferencias...', status: 'Configurando entorno de trabajo...' },
+        { pct: 100, label: 'Sistema listo', status: 'Preparando interfaz...' }
+    ];
+
+    var prevDone = -1;
+    function activateStep(idx) {
+        if (idx > 5) return;
+        // Marcar anterior como done
+        if (prevDone >= 0) {
+            dots[prevDone].className = 'w-step-dot done';
+            steps[prevDone].classList.add('done-step');
+        }
+        // Mostrar y activar actual
+        steps[idx].classList.add('visible');
+        dots[idx].className = 'w-step-dot active';
+
+        // Actualizar barra
+        bar.style.width = phases[idx].pct + '%';
+        pct.textContent = phases[idx].pct + '%';
+        label.textContent = phases[idx].label;
+        status.textContent = phases[idx].status;
+
+        prevDone = idx;
     }
 
-    // Fase de salida después de 3.8s
+    // Ejecutar secuencia
+    var delays = [300, 900, 1500, 2100, 2600, 3100];
+    delays.forEach(function(dl, i){
+        setTimeout(function(){ activateStep(i); }, dl);
+    });
+
+    // Finalizar: marcar último como done y cerrar
+    setTimeout(function(){
+        dots[5].className = 'w-step-dot done';
+        steps[5].classList.add('done-step');
+        bar.style.width = '100%';
+        pct.textContent = '100%';
+        label.textContent = '¡Todo listo!';
+        status.textContent = 'Accediendo al panel de control...';
+    }, 3500);
+
     setTimeout(function(){
         overlay.classList.add('phase-out');
-        setTimeout(function(){ overlay.remove(); }, 1000);
-    }, 3800);
-
-    sessionStorage.setItem('sintegra_welcomed', '1');
+        setTimeout(function(){ overlay.remove(); }, 800);
+    }, 4200);
 })();
 
 // ═══ ANIMATED COUNTERS ═══
