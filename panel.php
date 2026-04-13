@@ -421,65 +421,224 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         }
 
         /* ═══ WELCOME OVERLAY ═══ */
+        /* ═══ WELCOME OVERLAY — CINEMATIC ═══ */
         .welcome-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             z-index: 9999;
-            background: #0A0A0A;
+            background: #050505;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 18px;
             opacity: 1;
-            transition: opacity .6s ease;
             overflow: hidden;
         }
-        .welcome-overlay.fade-out { opacity: 0; pointer-events: none; }
-        .welcome-logo-text {
+        .welcome-overlay.phase-out {
+            animation: welcomeFadeOut .8s .2s ease forwards;
+        }
+        @keyframes welcomeFadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        /* Fondo radial dorado */
+        .w-bg-glow {
+            position: absolute;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(196,154,44,.15) 0%, rgba(196,154,44,.05) 40%, transparent 70%);
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%) scale(0);
+            animation: glowExpand 2s .3s cubic-bezier(.22,1,.36,1) forwards;
+        }
+        @keyframes glowExpand {
+            to { transform: translate(-50%,-50%) scale(1); }
+        }
+
+        /* Líneas horizontales decorativas */
+        .w-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(196,154,44,.4), transparent);
+            top: 50%; left: 50%;
+            transform: translateX(-50%) scaleX(0);
+        }
+        .w-line-1 { width: 500px; margin-top: -80px; animation: lineReveal 1s .5s ease forwards; }
+        .w-line-2 { width: 500px; margin-top: 80px; animation: lineReveal 1s .7s ease forwards; }
+        .w-line-3 { width: 300px; margin-top: 120px; animation: lineReveal 1s .9s ease forwards; opacity: .4; }
+        @keyframes lineReveal {
+            to { transform: translateX(-50%) scaleX(1); }
+        }
+
+        /* Logo Hochschild */
+        .w-logo-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+        .w-logo-img {
+            width: 80px;
+            height: auto;
+            filter: brightness(0) invert(1);
+            opacity: 0;
+            transform: scale(.7);
+            animation: logoReveal .8s .4s cubic-bezier(.22,1,.36,1) forwards;
+        }
+        @keyframes logoReveal {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Anillo dorado alrededor del logo */
+        .w-logo-ring {
+            position: absolute;
+            top: -15px;
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(196,154,44,.6) 25%, transparent 50%, rgba(196,154,44,.6) 75%, transparent 100%) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            animation: ringReveal 1.2s .6s ease forwards, ringSpin 4s 1s linear infinite;
+        }
+        @keyframes ringReveal { to { opacity: .7; } }
+        @keyframes ringSpin { to { transform: rotate(360deg); } }
+
+        /* Texto SINTEGRA */
+        .w-brand {
+            margin-top: 28px;
             font-family: var(--font);
-            font-size: 42px;
+            font-size: 38px;
             font-weight: 900;
-            letter-spacing: 8px;
-            background: linear-gradient(135deg, #C49A2C, #E8C85A, #D4AF37, #C49A2C);
-            background-size: 200% 200%;
+            letter-spacing: 14px;
+            text-indent: 14px;
+            background: linear-gradient(135deg, #B8860B, #E8C85A, #FFD700, #E8C85A, #B8860B);
+            background-size: 300% 100%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: welcome-shimmer 2s ease infinite;
             opacity: 0;
-            animation: welcome-text-in .8s .2s ease forwards, welcome-shimmer 2s ease infinite;
+            transform: translateY(10px);
+            animation: textUp .7s .8s ease forwards, goldShimmer 3s 1.5s ease infinite;
         }
-        .welcome-user {
+        .w-subtitle {
             font-family: var(--font);
-            font-size: 16px;
-            font-weight: 500;
-            color: rgba(255,255,255,.7);
-            letter-spacing: 2px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 6px;
+            text-indent: 6px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.35);
+            margin-top: 6px;
             opacity: 0;
-            animation: welcome-text-in .8s .8s ease forwards;
+            animation: textUp .6s 1s ease forwards;
         }
-        @keyframes welcome-text-in {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
+
+        /* Separador dorado */
+        .w-divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #C49A2C, transparent);
+            margin-top: 24px;
+            opacity: 0;
+            transform: scaleX(0);
+            animation: dividerIn .6s 1.2s ease forwards;
         }
-        @keyframes welcome-shimmer {
+        @keyframes dividerIn {
+            to { opacity: 1; transform: scaleX(1); }
+        }
+
+        /* Bienvenido */
+        .w-welcome-text {
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,.5);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            opacity: 0;
+            animation: textUp .6s 1.4s ease forwards;
+        }
+        .w-user-name {
+            font-family: var(--font);
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-top: 6px;
+            opacity: 0;
+            animation: textUp .6s 1.6s ease forwards;
+        }
+
+        /* Barra de carga */
+        .w-loader {
+            position: absolute;
+            bottom: 60px;
+            width: 120px;
+            height: 2px;
+            background: rgba(255,255,255,.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .w-loader-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #C49A2C, #FFD700);
+            border-radius: 2px;
+            animation: loaderFill 2.8s .8s ease-in-out forwards;
+        }
+        @keyframes loaderFill {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+
+        /* Texto inferior */
+        .w-footer {
+            position: absolute;
+            bottom: 30px;
+            font-family: var(--font);
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: rgba(255,255,255,.2);
+            text-transform: uppercase;
+            opacity: 0;
+            animation: textUp .5s 1s ease forwards;
+        }
+
+        @keyframes textUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes goldShimmer {
             0%,100% { background-position: 0% 50%; }
             50%     { background-position: 100% 50%; }
         }
-        /* Particles */
-        .welcome-overlay .particle {
+
+        /* Partículas flotantes premium */
+        .w-particle {
             position: absolute;
-            width: 4px; height: 4px;
-            background: #E8C85A;
             border-radius: 50%;
-            opacity: 0;
-            animation: particle-float 2.5s ease-in-out infinite;
+            pointer-events: none;
         }
-        @keyframes particle-float {
-            0%   { opacity: 0; transform: translateY(0) scale(.5); }
-            20%  { opacity: .8; }
-            100% { opacity: 0; transform: translateY(-120px) scale(0); }
+        .w-particle-gold {
+            background: radial-gradient(circle, rgba(232,200,90,.8), rgba(196,154,44,.3));
+            animation: pFloat var(--dur) var(--delay) ease-in-out infinite;
+        }
+        .w-particle-white {
+            background: radial-gradient(circle, rgba(255,255,255,.5), rgba(255,255,255,.1));
+            animation: pFloat var(--dur) var(--delay) ease-in-out infinite;
+        }
+        @keyframes pFloat {
+            0%   { opacity: 0; transform: translateY(0) scale(.3); }
+            15%  { opacity: 1; }
+            85%  { opacity: .6; }
+            100% { opacity: 0; transform: translateY(var(--travel)) scale(0); }
         }
 
         /* ═══ QUICK STATS STRIP ═══ */
@@ -559,10 +718,32 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
 </head>
 <body>
 
-<!-- WELCOME OVERLAY -->
+<!-- WELCOME OVERLAY — CINEMATIC -->
 <div class="welcome-overlay" id="welcomeOverlay">
-    <div class="welcome-logo-text">SINTEGRA</div>
-    <div class="welcome-user">Bienvenido, <?php echo htmlspecialchars($nombre_completo); ?></div>
+    <!-- Background glow -->
+    <div class="w-bg-glow"></div>
+    <!-- Decorative lines -->
+    <div class="w-line w-line-1"></div>
+    <div class="w-line w-line-2"></div>
+    <div class="w-line w-line-3"></div>
+
+    <!-- Center content -->
+    <div class="w-logo-container">
+        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+            <div class="w-logo-ring"></div>
+            <img src="Assets Index/logo.png" alt="Hochschild Mining" class="w-logo-img">
+        </div>
+        <div class="w-brand">SINTEGRA</div>
+        <div class="w-subtitle">Sistema de Control Integrado</div>
+        <div class="w-divider"></div>
+        <div class="w-welcome-text">Bienvenido</div>
+        <div class="w-user-name"><?php echo htmlspecialchars($nombre_completo); ?></div>
+    </div>
+
+    <!-- Loader bar -->
+    <div class="w-loader"><div class="w-loader-bar"></div></div>
+    <!-- Footer -->
+    <div class="w-footer">Hochschild Mining &bull; Seguridad Integral</div>
 </div>
 
 <!-- TOPBAR -->
@@ -718,7 +899,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
 </div>
 
 <script>
-// ═══ WELCOME OVERLAY ═══
+// ═══ WELCOME OVERLAY — CINEMATIC ═══
 (function(){
     var overlay = document.getElementById('welcomeOverlay');
     if (!overlay) return;
@@ -726,20 +907,29 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         overlay.remove();
         return;
     }
-    // Generate particles
-    for (var i = 0; i < 20; i++) {
+
+    // Generar partículas premium (doradas + blancas)
+    for (var i = 0; i < 35; i++) {
         var p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random()*100 + '%';
-        p.style.top = 40 + Math.random()*40 + '%';
-        p.style.animationDelay = Math.random()*2 + 's';
-        p.style.width = p.style.height = (2 + Math.random()*4) + 'px';
+        var isGold = Math.random() > .3;
+        p.className = 'w-particle ' + (isGold ? 'w-particle-gold' : 'w-particle-white');
+        var size = 2 + Math.random() * 5;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = (10 + Math.random() * 80) + '%';
+        p.style.top = (30 + Math.random() * 50) + '%';
+        p.style.setProperty('--dur', (2.5 + Math.random() * 2.5) + 's');
+        p.style.setProperty('--delay', (Math.random() * 3) + 's');
+        p.style.setProperty('--travel', '-' + (80 + Math.random() * 120) + 'px');
         overlay.appendChild(p);
     }
+
+    // Fase de salida después de 3.8s
     setTimeout(function(){
-        overlay.classList.add('fade-out');
-        setTimeout(function(){ overlay.remove(); }, 600);
-    }, 3000);
+        overlay.classList.add('phase-out');
+        setTimeout(function(){ overlay.remove(); }, 1000);
+    }, 3800);
+
     sessionStorage.setItem('sintegra_welcomed', '1');
 })();
 
