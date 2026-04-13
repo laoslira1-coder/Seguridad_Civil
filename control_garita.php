@@ -449,11 +449,11 @@ $res_hist = mysqli_query($conn, $sql_hist);
         .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
         .conductor-photo {
-            width: 64px; height: 64px;
+            width: 90px; height: 90px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--g);
-            box-shadow: 0 2px 12px rgba(0,0,0,.15);
+            border: 3px solid var(--g);
+            box-shadow: 0 4px 20px rgba(0,0,0,.2);
         }
         .h-photo-sm {
             width: 28px; height: 28px;

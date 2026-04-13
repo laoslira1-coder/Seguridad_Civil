@@ -339,12 +339,12 @@ $res_hist = mysqli_query($conn, $sql_hist);
             background: var(--g-grad);
         }
         .card-photo {
-            width: 56px; height: 56px;
+            width: 90px; height: 90px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--g);
-            box-shadow: 0 2px 12px rgba(0,0,0,.3);
-            margin: 0 auto 10px;
+            border: 3px solid var(--g);
+            box-shadow: 0 4px 20px rgba(0,0,0,.35);
+            margin: 0 auto 12px;
             display: block;
         }
         .card-header h2 {
