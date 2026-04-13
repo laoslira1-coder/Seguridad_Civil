@@ -172,6 +172,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             font-size: 16px;
             transition: all .25s;
             border: 1px solid var(--b);
+            overflow: hidden;
+            position: relative;
         }
         .header-home:hover { background: var(--gl); color: var(--g); border-color: var(--b-gold); }
 
@@ -550,6 +552,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             color: var(--ink4);
             font-family: var(--font);
             transition: all .25s;
+            overflow: hidden;
+            position: relative;
         }
         .btn-close:hover { background: var(--bg); border-color: var(--b-gold); color: var(--ink); }
 
@@ -581,6 +585,69 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .info-row span { font-weight: 700; color: var(--ink); font-size: 14px; }
 
         .spin { animation: fa-spin 1s infinite linear; }
+
+        /* ─── MICRO ANIMATIONS ─── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(196,154,44,.5); }
+            50% { box-shadow: 0 0 0 8px rgba(196,154,44,0); }
+        }
+        .kpi-card {
+            opacity: 0;
+            animation: fadeInUp .5s ease-out forwards;
+        }
+        .kpi-card:nth-child(1) { animation-delay: .05s; }
+        .kpi-card:nth-child(2) { animation-delay: .12s; }
+        .kpi-card:nth-child(3) { animation-delay: .19s; }
+        .kpi-card:nth-child(4) { animation-delay: .26s; }
+
+        .content-box { opacity: 0; animation: fadeInUp .5s ease-out .3s forwards; }
+        .time-card { opacity: 0; animation: fadeInUp .5s ease-out .4s forwards; }
+
+        .btn-refresh { position: relative; overflow: hidden; animation: pulse 2s infinite; }
+        .btn-refresh .ripple-fx {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,.35);
+            transform: scale(0);
+            animation: rippleAnim .6s ease-out;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* table row animations */
+        @keyframes rowFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        #table-body tr.row-anim {
+            opacity: 0;
+            animation: rowFadeIn .35s ease-out forwards;
+        }
+        #table-body tr:hover td {
+            background: var(--gl);
+            transition: background .2s;
+        }
+
+        /* ─── SKELETON LOADING ─── */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            height: 14px;
+            display: inline-block;
+        }
+        .skeleton-row td { padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,.04); }
     </style>
 </head>
 <body>
@@ -702,7 +769,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        <tr><td colspan="7" style="text-align:center; padding:100px; color:var(--ink5); font-size:13px; font-weight:500;">Sincronizando con estacion garita SINTEGRA...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -712,6 +778,49 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
 <script>
     let radarTimeout;
+
+    // ─── HELPERS: COUNT-UP ANIMATION ───
+    function animateCount(el, target, duration = 800) {
+        const start = parseInt(el.innerText) || 0;
+        if (start === target) return;
+        const startTime = performance.now();
+        function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.innerText = Math.round(start + (target - start) * eased);
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    // ─── HELPERS: SKELETON ROWS ───
+    function showSkeletonRows() {
+        const widths = ['60%','40%','50%','70%','55%','35%','45%'];
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+            html += '<tr class="skeleton-row">';
+            for (let j = 0; j < 7; j++) {
+                html += `<td><div class="skeleton" style="width:${widths[j]}; height:14px;"></div></td>`;
+            }
+            html += '</tr>';
+        }
+        document.getElementById('table-body').innerHTML = html;
+    }
+
+    // ─── HELPERS: RIPPLE ON BUTTONS ───
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-refresh, .btn-close, .header-home');
+        if (!btn) return;
+        const rect = btn.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple-fx';
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        btn.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+    });
 
     // 1. BUSCADOR MAESTRO DE PERSONAL (Base de Datos Autónoma)
     function searchPerson() {
@@ -756,12 +865,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         const btn = document.getElementById('btn-refresh');
         btn.querySelector('i').classList.add('spin');
 
+        // Show skeleton while loading
+        showSkeletonRows();
+
         fetch(`monitoreo.php?ajax=1&fecha=${date}&q=${encodeURIComponent(q)}`)
             .then(res => res.json())
             .then(data => {
-                document.getElementById('kpi-in').innerText = data.kpis.ingresos;
-                document.getElementById('kpi-out').innerText = data.kpis.salidas;
-                document.getElementById('kpi-total').innerText = data.kpis.total;
+                // Animate KPI numbers
+                animateCount(document.getElementById('kpi-in'), data.kpis.ingresos);
+                animateCount(document.getElementById('kpi-out'), data.kpis.salidas);
+                animateCount(document.getElementById('kpi-total'), data.kpis.total);
 
                 let rankHtml = '';
                 data.top_empresas.forEach(e => {
@@ -777,10 +890,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 if(data.feed.length === 0) {
                     html = '<tr><td colspan="7" style="text-align:center; padding:60px; color:var(--ink5); font-weight:500; font-size:13px;">No se detecto transito bajo estos criterios.</td></tr>';
                 } else {
-                    data.feed.forEach(row => {
+                    data.feed.forEach((row, idx) => {
                         const badge = row.tipo_movimiento === 'INGRESO' ? 'bg-in' : 'bg-out';
+                        const delay = Math.min(idx * 30, 600);
                         html += `
-                            <tr>
+                            <tr class="row-anim" style="animation-delay:${delay}ms;">
                                 <td><strong style="color:var(--ink);">${row.fecha_fmt}</strong><div class="td-meta">${row.hora_fmt}</div></td>
                                 <td><span class="badge-mov ${badge}">${row.tipo_movimiento}</span></td>
                                 <td><span class="badge-placa">${row.placa_unidad}</span><div class="td-meta">${row.v_marca || '-'}</div></td>
@@ -800,7 +914,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     function closeModal() { document.getElementById('modal-person').style.display = 'none'; }
     window.onclick = (e) => { if(e.target == document.getElementById('modal-person')) closeModal(); }
 
-    document.addEventListener('DOMContentLoaded', () => loadDashboard());
+    document.addEventListener('DOMContentLoaded', () => {
+        showSkeletonRows();
+        loadDashboard();
+    });
 </script>
 </body>
 </html>

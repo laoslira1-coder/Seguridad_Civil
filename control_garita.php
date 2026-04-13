@@ -1186,9 +1186,178 @@ $res_hist = mysqli_query($conn, $sql_hist);
             background: rgba(196,154,44,.2);
             color: var(--ink);
         }
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            min-width: 300px;
+            max-width: 420px;
+            padding: 16px 22px;
+            border-radius: var(--radius-lg);
+            color: #fff;
+            font-family: var(--font);
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.18);
+            transform: translateX(120%);
+            opacity: 0;
+            animation: toastIn .4s var(--ease) forwards;
+        }
+        .toast.toast-out {
+            animation: toastOut .35s var(--ease) forwards;
+        }
+        .toast-success {
+            background: linear-gradient(135deg, #16A34A, #22C55E);
+        }
+        .toast-error {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+        }
+        .toast-warning {
+            background: linear-gradient(135deg, #D97706, #F59E0B);
+        }
+        .toast i { font-size: 18px; flex-shrink: 0; }
+        .toast-body { flex: 1; line-height: 1.4; }
+        .toast-close {
+            background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer;
+            font-size: 16px; padding: 4px; transition: color .2s;
+        }
+        .toast-close:hover { color: #fff; }
+        .toast-progress {
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 3px;
+            background: rgba(255,255,255,.4);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            animation: toastProgress 3s linear forwards;
+        }
+        @keyframes toastIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        /* ===== SKELETON LOADING ===== */
+        .skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.5s infinite ease-in-out;
+            border-radius: var(--radius-md);
+        }
+        @keyframes skeletonShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-line {
+            height: 14px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+        }
+        .skeleton-line.w60 { width: 60%; }
+        .skeleton-line.w80 { width: 80%; }
+        .skeleton-line.w40 { width: 40%; }
+        .skeleton-block {
+            height: 44px;
+            margin-bottom: 14px;
+        }
+        .skeleton-circle {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+        }
+
+        /* ===== RIPPLE EFFECT ON BUTTONS ===== */
+        .btn-search, .btn-register, .btn-save-new, .btn-mini {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple-effect {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,.35);
+            transform: scale(0);
+            animation: rippleAnim .6s ease-out;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* ===== CARD SLIDE-IN ANIMATIONS ===== */
+        .card {
+            animation: cardSlideIn .5s var(--ease) both;
+        }
+        .card:nth-child(1) { animation-delay: .05s; }
+        .card:nth-child(2) { animation-delay: .15s; }
+        @keyframes cardSlideIn {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== PLACA HERO GLOW PULSE ===== */
+        @keyframes placaGlow {
+            0%, 100% { box-shadow: inset 0 2px 6px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04), 0 0 0 0 rgba(196,154,44,0); }
+            50% { box-shadow: inset 0 2px 6px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04), 0 0 18px 2px rgba(196,154,44,.13); }
+        }
+        #inputPlaca {
+            animation: placaGlow 3s ease-in-out infinite;
+        }
+        #inputPlaca:focus {
+            animation: none;
+        }
+
+        /* ===== HISTORY ITEM STAGGER ===== */
+        .history-item {
+            opacity: 0;
+            animation: histItemIn .4s var(--ease) forwards;
+        }
+        .history-item:nth-child(1) { animation-delay: .05s; }
+        .history-item:nth-child(2) { animation-delay: .10s; }
+        .history-item:nth-child(3) { animation-delay: .15s; }
+        .history-item:nth-child(4) { animation-delay: .20s; }
+        .history-item:nth-child(5) { animation-delay: .25s; }
+        .history-item:nth-child(6) { animation-delay: .30s; }
+        .history-item:nth-child(7) { animation-delay: .35s; }
+        .history-item:nth-child(8) { animation-delay: .40s; }
+        .history-item:nth-child(9) { animation-delay: .45s; }
+        .history-item:nth-child(10) { animation-delay: .50s; }
+        @keyframes histItemIn {
+            from { opacity: 0; transform: translateX(-16px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== SMOOTH BUTTON HOVER/ACTIVE ===== */
+        .btn-search:hover, .btn-register:hover, .btn-save-new:hover, .btn-mini:hover {
+            transform: translateY(-2px) scale(1.01);
+        }
+        .btn-search:active, .btn-register:active, .btn-save-new:active, .btn-mini:active {
+            transform: translateY(0) scale(.97);
+            transition-duration: .1s;
+        }
     </style>
 </head>
 <body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
 
 <!-- MODALES -->
 <div id="camera-modal" class="modal-overlay" style="flex-direction: column;">
@@ -1667,13 +1836,133 @@ $res_hist = mysqli_query($conn, $sql_hist);
         icon: "<?php echo ($tipo_mensaje == 'success' ? 'success' : 'error'); ?>",
         confirmButtonColor: "#c5a059",
         confirmButtonText: "Entendido",
-        timer: <?php echo ($tipo_mensaje == 'success' ? '3000' : 'null'); ?>, 
+        timer: <?php echo ($tipo_mensaje == 'success' ? '3000' : 'null'); ?>,
         timerProgressBar: <?php echo ($tipo_mensaje == 'success' ? 'true' : 'false'); ?>
     });
+    // Toast notification
+    showToast("<?php echo addslashes($mensaje); ?>", "<?php echo $tipo_mensaje; ?>");
+    <?php if ($tipo_mensaje == 'success'): ?>
+    playSuccessBeep();
+    if(navigator.vibrate) navigator.vibrate(200);
+    <?php endif; ?>
 </script>
 <?php endif; ?>
 
 <script>
+    // ===== TOAST NOTIFICATION SYSTEM =====
+    function showToast(message, type) {
+        type = type || 'success';
+        var container = document.getElementById('toastContainer');
+        var toast = document.createElement('div');
+        var iconMap = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-triangle-exclamation' };
+        toast.className = 'toast toast-' + type;
+        toast.style.position = 'relative';
+        toast.innerHTML = '<i class="fa-solid ' + (iconMap[type] || iconMap.success) + '"></i>' +
+            '<div class="toast-body">' + message + '</div>' +
+            '<button class="toast-close" onclick="dismissToast(this.parentElement)">&times;</button>' +
+            '<div class="toast-progress"></div>';
+        container.appendChild(toast);
+        setTimeout(function() { dismissToast(toast); }, 3000);
+    }
+    function dismissToast(el) {
+        if(!el || el.classList.contains('toast-out')) return;
+        el.classList.add('toast-out');
+        setTimeout(function() { if(el.parentElement) el.parentElement.removeChild(el); }, 350);
+    }
+
+    // ===== WEB AUDIO API SOUNDS =====
+    var _audioCtx = null;
+    function _getAudioCtx() {
+        if(!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return _audioCtx;
+    }
+    function playSuccessBeep() {
+        try {
+            var ctx = _getAudioCtx();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+            // Second tone for pleasant double-beep
+            var osc2 = ctx.createOscillator();
+            var gain2 = ctx.createGain();
+            osc2.connect(gain2); gain2.connect(ctx.destination);
+            osc2.type = 'sine'; osc2.frequency.setValueAtTime(1174, ctx.currentTime + 0.15);
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.45);
+        } catch(e) {}
+    }
+    function playScanBeep() {
+        try {
+            var ctx = _getAudioCtx();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'square'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.1);
+        } catch(e) {}
+    }
+
+    // ===== RIPPLE EFFECT =====
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-search, .btn-register, .btn-save-new, .btn-mini');
+        if(!btn) return;
+        var rect = btn.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'ripple-effect';
+        var size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+        btn.appendChild(ripple);
+        setTimeout(function() { ripple.remove(); }, 600);
+    });
+
+    // ===== SKELETON HELPERS =====
+    function showSkeleton(containerId, lines) {
+        var el = document.getElementById(containerId);
+        if(!el) return;
+        var html = '';
+        if(containerId === 'boxConductor') {
+            html = '<div style="padding:20px;"><div class="skeleton skeleton-circle"></div>';
+            html += '<div class="skeleton skeleton-line w80"></div>';
+            html += '<div class="skeleton skeleton-line w60"></div>';
+            html += '<div class="skeleton skeleton-block"></div>';
+            html += '<div class="skeleton skeleton-line w40"></div>';
+            html += '<div class="skeleton skeleton-block"></div></div>';
+        } else {
+            for(var i = 0; i < (lines || 5); i++) {
+                var w = ['w60','w80','w40'][i % 3];
+                html += '<div class="skeleton skeleton-line ' + w + '"></div>';
+            }
+            html += '<div class="skeleton skeleton-block"></div>';
+            html += '<div class="skeleton skeleton-block"></div>';
+        }
+        el._prevHTML = el.innerHTML;
+        el._prevDisplay = el.style.display;
+        el.innerHTML = html;
+        el.style.display = 'block';
+        el.classList.remove('hidden');
+    }
+    function hideSkeleton(containerId) {
+        var el = document.getElementById(containerId);
+        if(!el || !el._prevHTML) return;
+        el.innerHTML = el._prevHTML;
+        el.style.display = el._prevDisplay || '';
+        if(el._prevDisplay === '' || el._prevDisplay === 'none') el.classList.add('hidden');
+        delete el._prevHTML;
+        delete el._prevDisplay;
+    }
+
     // --- FUNCION MAGICA PARA AUTO-COMPLETAR FECHAS CON BARRITAS ---
     function formatoFecha(input) {
         let v = input.value.replace(/\D/g, ''); // Deja solo números
@@ -1828,9 +2117,12 @@ $res_hist = mysqli_query($conn, $sql_hist);
         let dni = document.getElementById("inputDniConductor").value.trim();
         if(dni.length !== 8) { Swal.fire('Error', 'Ingrese un DNI válido de 8 dígitos', 'error'); return; }
 
+        showSkeleton('boxConductor');
+
         $.ajax({
             url: 'buscar_persona.php', type: 'GET', data: { dni: dni }, dataType: 'json',
             success: function(data) {
+                hideSkeleton('boxConductor');
                 document.getElementById("boxConductor").classList.remove("hidden");
                 document.getElementById("final_dni_c").value = dni;
                 let iptNom = document.getElementById("final_nom_c");
@@ -1913,7 +2205,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
                     document.getElementById("lic_cat_mina").value = "";
                 }
             },
-            error: function() { Swal.fire('Error', 'Error de conexión al buscar', 'error'); }
+            error: function() { hideSkeleton('boxConductor'); Swal.fire('Error', 'Error de conexión al buscar', 'error'); }
         });
     }
 
@@ -2014,6 +2306,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
     function onScanSuccess(decodedText) {
         let limpio = decodedText.trim();
         if (!/^\d{8}$/.test(limpio)) { return; }
+        playScanBeep();
         document.getElementById('beep').play(); closeCamera();
         if (targetInputId === 'conductor') {
             document.getElementById('inputDniConductor').value = limpio; buscarConductor();
@@ -2061,12 +2354,15 @@ $res_hist = mysqli_query($conn, $sql_hist);
         if(estado == "") { Swal.fire('Atención', 'Seleccione un Estado', 'warning'); return; }
         if(estado == "AUTORIZADO" && (jefe == "" || autoriza == "")) { Swal.fire('Atención', 'Seleccione quién autoriza y el Jefe de Turno', 'warning'); return; }
 
-        $("#estadoEspera").html('<i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...');
+        $("#estadoEspera").hide();
         $("#fichaVehiculo").hide(); $("#formNuevoVehiculo").hide();
+        $("#cardResultado").show();
+        showSkeleton('fichaVehiculo', 6);
 
         $.ajax({
             url: 'buscar_datos.php', type: 'POST', data: { tipo: 'vehiculo', placa: placa }, dataType: 'json',
             success: function(data) {
+                hideSkeleton('fichaVehiculo');
                 if(data.encontrado) { mostrarResultado(data, estado, jefe); } 
                 else {
                     $("#cardValidacion").slideUp(400); 
@@ -2090,7 +2386,7 @@ $res_hist = mysqli_query($conn, $sql_hist);
                     }
                 }
             },
-            error: function() { $("#estadoEspera").text("Error de conexión"); Swal.fire('Error', 'No se pudo conectar con la base de datos', 'error'); }
+            error: function() { hideSkeleton('fichaVehiculo'); $("#estadoEspera").show().text("Error de conexión"); Swal.fire('Error', 'No se pudo conectar con la base de datos', 'error'); }
         });
     }
 

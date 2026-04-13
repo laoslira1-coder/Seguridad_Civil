@@ -725,6 +725,150 @@ $res_hist = mysqli_query($conn, $sql_hist);
         /* ═══ TYPE TABS ═══ */
         .type-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg); padding: 4px; border-radius: var(--r-md); }
         .type-tab { flex: 1; text-align: center; padding: 10px; border-radius: var(--r-sm); font-weight: 700; font-size: 11px; cursor: pointer; color: var(--ink5); transition: all .2s; }
+
+        /* ═══ TOAST NOTIFICATIONS ═══ */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: var(--r-lg);
+            background: var(--surf);
+            box-shadow: 0 8px 32px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            min-width: 280px;
+            max-width: 380px;
+            transform: translateX(120%);
+            animation: toastIn .4s cubic-bezier(.22,1,.36,1) forwards, toastOut .4s cubic-bezier(.4,0,1,1) 3s forwards;
+            border-left: 4px solid var(--green);
+        }
+        .toast--red { border-left-color: var(--red); }
+        .toast-icon {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 900;
+            flex-shrink: 0;
+            color: #fff;
+            background: var(--green);
+        }
+        .toast--red .toast-icon { background: var(--red); }
+        .toast-msg { flex: 1; line-height: 1.4; }
+        .toast-close {
+            background: none; border: none; cursor: pointer;
+            color: var(--ink5); font-size: 16px; padding: 4px;
+            transition: color .2s;
+        }
+        .toast-close:hover { color: var(--ink); }
+        @keyframes toastIn { to { transform: translateX(0); } }
+        @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+        /* ═══ RIPPLE EFFECT ═══ */
+        .ripple-wrap { position: relative; overflow: hidden; }
+        .ripple-wrap .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,.35);
+            transform: scale(0);
+            animation: rippleAnim .6s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+        /* ═══ SPRING SLIDE-UP for result card ═══ */
+        .result-card {
+            animation: springUp .5s cubic-bezier(.34,1.56,.64,1) forwards !important;
+        }
+        @keyframes springUp {
+            0% { transform: translateY(40px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ═══ STAGGERED FADE-IN for history items ═══ */
+        .history-item { opacity: 0; animation: histFadeIn .4s ease-out forwards; }
+        .history-item:nth-child(1) { animation-delay: .05s; }
+        .history-item:nth-child(2) { animation-delay: .1s; }
+        .history-item:nth-child(3) { animation-delay: .15s; }
+        .history-item:nth-child(4) { animation-delay: .2s; }
+        .history-item:nth-child(5) { animation-delay: .25s; }
+        .history-item:nth-child(6) { animation-delay: .3s; }
+        .history-item:nth-child(7) { animation-delay: .35s; }
+        .history-item:nth-child(8) { animation-delay: .4s; }
+        .history-item:nth-child(9) { animation-delay: .45s; }
+        .history-item:nth-child(10) { animation-delay: .5s; }
+        @keyframes histFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ═══ BUTTON HOVER/ACTIVE SCALING ═══ */
+        .btn-sel, .btn-confirm, .btn-modal-close, .big-scan-btn {
+            transition: all .25s cubic-bezier(.4,0,.2,1);
+        }
+        .btn-sel:hover { transform: scale(1.03) translateY(-1px); }
+        .btn-sel:active { transform: scale(.95); }
+        .btn-confirm:hover { transform: scale(1.02) translateY(-1px); }
+        .btn-confirm:active { transform: scale(.97); }
+
+        /* ═══ SKELETON LOADING ═══ */
+        .skeleton-card {
+            background: var(--surf);
+            border-radius: var(--r-2xl);
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,.07);
+            box-shadow: 0 2px 16px rgba(0,0,0,.06);
+            display: none;
+        }
+        .skeleton-card.active { display: block; }
+        .skel-header {
+            background: var(--ink);
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .skel-circle {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.1);
+            position: relative; overflow: hidden;
+        }
+        .skel-line {
+            height: 14px;
+            border-radius: 7px;
+            background: rgba(255,255,255,.1);
+            position: relative; overflow: hidden;
+        }
+        .skel-body { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+        .skel-block {
+            height: 48px;
+            border-radius: var(--r-md);
+            background: var(--bg);
+            position: relative; overflow: hidden;
+        }
+        .skel-circle::after, .skel-line::after, .skel-block::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        .skel-block::after {
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,.04), transparent);
+        }
+        @keyframes shimmer { to { left: 100%; } }
     </style>
 </head>
 <body>
@@ -760,9 +904,25 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </header>
 
+<div class="toast-container" id="toastContainer"></div>
+
 <div class="container">
 
-    <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div> <?php endif; ?>
+    <?php if ($mensaje): ?> <div class="alert-box <?php echo $tipo_mensaje; ?>" style="display:none;"><?php echo $mensaje; ?></div> <?php endif; ?>
+
+    <!-- Skeleton loading placeholder -->
+    <div class="skeleton-card" id="skeletonCard">
+        <div class="skel-header">
+            <div class="skel-circle"></div>
+            <div class="skel-line" style="width:160px;"></div>
+            <div class="skel-line" style="width:120px; height:10px;"></div>
+        </div>
+        <div class="skel-body">
+            <div class="skel-block"></div>
+            <div class="skel-block" style="height:56px;"></div>
+            <div class="skel-block" style="height:56px;"></div>
+        </div>
+    </div>
 
     <?php if (!$persona && !$nuevo_dni): ?>
         <div class="driver-search-box">
@@ -912,9 +1072,92 @@ $res_hist = mysqli_query($conn, $sql_hist);
     </div>
 </div>
 
-<audio id="beep" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
-
 <script>
+    // ═══ WEB AUDIO API - Sound System ═══
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let _audioCtx;
+    function getAudioCtx() { if (!_audioCtx) _audioCtx = new AudioCtx(); return _audioCtx; }
+
+    function playSuccessBeep() {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+    }
+
+    function playScanBeep() {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
+    }
+
+    // ═══ TOAST SYSTEM ═══
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (type === 'red' ? ' toast--red' : '');
+        const icon = type === 'red' ? '↗' : '✓';
+        toast.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-msg">${message}</div><button class="toast-close" onclick="this.parentElement.remove()">&times;</button>`;
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentElement) toast.remove(); }, 3600);
+    }
+
+    // ═══ RIPPLE EFFECT ═══
+    function addRipple(e) {
+        const el = e.currentTarget;
+        const rect = el.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        el.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    }
+
+    // Apply ripple to buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-confirm, .btn-sel, .btn-modal-close, .big-scan-btn, .camera-close').forEach(function(btn) {
+            btn.classList.add('ripple-wrap');
+            btn.addEventListener('click', addRipple);
+        });
+    });
+
+    // ═══ SKELETON: show on form submit ═══
+    (function() {
+        var formScan = document.getElementById('formScan');
+        if (formScan) {
+            formScan.addEventListener('submit', function() {
+                var skel = document.getElementById('skeletonCard');
+                if (skel) skel.classList.add('active');
+            });
+        }
+    })();
+
+    // ═══ ON PAGE LOAD: Toast + Sound + Vibration for success ═══
+    <?php if ($mensaje && $tipo_mensaje === 'success'): ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        playSuccessBeep();
+        if (navigator.vibrate) navigator.vibrate(200);
+        showToast('<?php echo addslashes($mensaje); ?>', 'green');
+    });
+    <?php elseif ($mensaje && $tipo_mensaje === 'error'): ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        showToast('<?php echo addslashes($mensaje); ?>', 'red');
+    });
+    <?php endif; ?>
+
     function setMov(tipo) {
         const input = document.getElementById('tipo_movimiento');
         const btnIn = document.getElementById('btn-in');
@@ -1010,10 +1253,13 @@ $res_hist = mysqli_query($conn, $sql_hist);
     function onScan(txt) {
         let val = txt.trim();
         if(!/^\d{8}$/.test(val)) return;
-        document.getElementById('beep').play();
+        playScanBeep();
+        if (navigator.vibrate) navigator.vibrate(200);
         scanner.stop().then(() => {
             document.getElementById('camera-modal').style.display='none';
             document.getElementById('inputDni').value = val;
+            var skel = document.getElementById('skeletonCard');
+            if (skel) skel.classList.add('active');
             document.getElementById('formScan').submit();
         });
     }
