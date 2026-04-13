@@ -426,7 +426,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             z-index: 9999;
-            background: #080808;
+            background: #f5f5f0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -444,20 +444,20 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             position: absolute;
             width: 3px; height: 3px;
             border-radius: 50%;
-            background: rgba(196,154,44,.25);
+            background: rgba(196,154,44,.35);
             animation: wDotFloat var(--d, 6s) var(--dl, 0s) ease-in-out infinite alternate;
         }
         @keyframes wDotFloat {
-            0% { transform: translateY(0) scale(.5); opacity: .15; }
-            100% { transform: translateY(var(--mv, -40px)) scale(1); opacity: .5; }
+            0% { transform: translateY(0) scale(.5); opacity: .2; }
+            100% { transform: translateY(var(--mv, -40px)) scale(1); opacity: .6; }
         }
 
         /* Grid pattern sutil */
         .w-grid-bg {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background-image:
-                linear-gradient(rgba(196,154,44,.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(196,154,44,.03) 1px, transparent 1px);
+                linear-gradient(rgba(196,154,44,.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(196,154,44,.06) 1px, transparent 1px);
             background-size: 50px 50px;
         }
 
@@ -494,13 +494,13 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             transition: all .4s ease;
         }
         .w-step-dot.pending {
-            background: rgba(255,255,255,.06);
-            border: 1.5px solid rgba(255,255,255,.12);
-            color: rgba(255,255,255,.25);
+            background: rgba(0,0,0,.03);
+            border: 1.5px solid rgba(0,0,0,.1);
+            color: rgba(0,0,0,.2);
         }
         .w-step-dot.active {
-            background: rgba(196,154,44,.15);
-            border: 1.5px solid rgba(196,154,44,.5);
+            background: rgba(196,154,44,.12);
+            border: 1.5px solid rgba(196,154,44,.6);
             color: #C49A2C;
             box-shadow: 0 0 16px rgba(196,154,44,.25);
         }
@@ -513,12 +513,12 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             font-family: var(--font);
             font-size: 13px;
             font-weight: 500;
-            color: rgba(255,255,255,.25);
+            color: rgba(0,0,0,.2);
             letter-spacing: .5px;
             transition: all .4s ease;
         }
-        .w-step.visible .w-step-label { color: rgba(255,255,255,.7); }
-        .w-step.done-step .w-step-label { color: rgba(196,154,44,.9); }
+        .w-step.visible .w-step-label { color: rgba(0,0,0,.6); }
+        .w-step.done-step .w-step-label { color: #C49A2C; }
 
         /* Línea conectora vertical */
         .w-step::before {
@@ -528,21 +528,20 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             top: -1px;
             width: 1.5px;
             height: 14px;
-            background: rgba(255,255,255,.08);
+            background: rgba(0,0,0,.08);
         }
         .w-step:first-child::before { display: none; }
-        .w-step.done-step::before { background: rgba(196,154,44,.4); }
+        .w-step.done-step::before { background: rgba(196,154,44,.5); }
 
         /* ── CARD (derecha) ── */
         .w-card {
             width: 420px;
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(255,255,255,.08);
+            background: #fff;
+            border: 1px solid rgba(0,0,0,.06);
             border-radius: 20px;
             overflow: hidden;
             z-index: 2;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 40px rgba(0,0,0,.4), 0 0 80px rgba(196,154,44,.05);
+            box-shadow: 0 8px 40px rgba(0,0,0,.08), 0 0 80px rgba(196,154,44,.06);
             opacity: 0;
             transform: translateY(20px);
             animation: cardUp .6s .3s ease forwards;
@@ -559,12 +558,10 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         .w-card-logo {
             padding: 32px 32px 20px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,.06);
+            border-bottom: 1px solid rgba(0,0,0,.06);
         }
         .w-card-logo img {
-            height: 45px;
-            filter: brightness(0) invert(1);
-            opacity: .9;
+            height: 50px;
         }
         .w-card-logo-sub {
             margin-top: 10px;
@@ -573,7 +570,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             font-weight: 600;
             letter-spacing: 5px;
             text-transform: uppercase;
-            color: rgba(255,255,255,.3);
+            color: rgba(0,0,0,.35);
         }
 
         /* User area */
@@ -617,14 +614,14 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             font-family: var(--font);
             font-size: 18px;
             font-weight: 700;
-            color: #fff;
+            color: #1a1a1a;
             letter-spacing: .5px;
         }
         .w-user-info span {
             font-family: var(--font);
             font-size: 12px;
             font-weight: 500;
-            color: rgba(255,255,255,.4);
+            color: rgba(0,0,0,.4);
             margin-top: 2px;
             display: block;
         }
@@ -642,19 +639,19 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             gap: 6px;
             padding: 6px 14px;
             border-radius: 8px;
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(0,0,0,.02);
+            border: 1px solid rgba(0,0,0,.07);
             font-family: var(--font);
             font-size: 11px;
             font-weight: 500;
-            color: rgba(255,255,255,.5);
+            color: rgba(0,0,0,.5);
         }
         .w-tag i { font-size: 10px; color: rgba(196,154,44,.7); }
 
         /* Progress */
         .w-progress {
             padding: 20px 32px 14px;
-            border-top: 1px solid rgba(255,255,255,.06);
+            border-top: 1px solid rgba(0,0,0,.06);
         }
         .w-progress-header {
             display: flex;
@@ -665,7 +662,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
             font-family: var(--font);
             font-size: 11px;
             font-weight: 500;
-            color: rgba(255,255,255,.4);
+            color: rgba(0,0,0,.45);
         }
         .w-progress-pct {
             font-family: var(--mono);
@@ -676,7 +673,7 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         .w-progress-track {
             width: 100%;
             height: 4px;
-            background: rgba(255,255,255,.06);
+            background: rgba(0,0,0,.05);
             border-radius: 4px;
             overflow: hidden;
         }
@@ -706,13 +703,13 @@ $iniciales = strtoupper(substr($partes[0],0,1).(isset($partes[1])?substr($partes
         /* Footer de la card */
         .w-card-footer {
             padding: 14px 32px;
-            border-top: 1px solid rgba(255,255,255,.04);
+            border-top: 1px solid rgba(0,0,0,.04);
             text-align: center;
             font-family: var(--font);
             font-size: 9px;
             font-weight: 500;
             letter-spacing: 1.5px;
-            color: rgba(255,255,255,.15);
+            color: rgba(0,0,0,.25);
             text-transform: uppercase;
         }
 
